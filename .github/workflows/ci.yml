@@ -11,6 +11,22 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      # Throw-away database for the integration tests only (CI-only password).
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # The test setup creates this database and applies the migrations.
+      TEST_DATABASE_URL: postgres://postgres:ci-only-password@localhost:5432/b2b_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
