@@ -16,3 +16,10 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# Next.js / TypeScript
+/build
+*.tsbuildinfo
+next-env.d.ts
+*.pem
+.vercel
