@@ -10,7 +10,15 @@ import { resetSentMails } from "./mail-capture";
 
 vi.mock("next/headers", () => ({ cookies: cookiesMock, headers: headersMock }));
 vi.mock("next/navigation", () => ({ redirect: redirectMock }));
-vi.mock("next/server", () => ({ connection: async () => {} }));
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  connection: async () => {},
+}));
+vi.mock("next/cache", () => ({
+  cacheLife: () => {},
+  cacheTag: () => {},
+  revalidateTag: () => {},
+}));
 
 // Mail is captured instead of sent.
 vi.mock("@/lib/mail/send", async () => {
@@ -34,7 +42,7 @@ beforeEach(async () => {
   if (hasDb) {
     const { getDb } = await import("@/db");
     await getDb().execute(
-      sql`truncate table rate_limits, email_tokens, sessions, admin_recovery_codes, admins, users, companies restart identity cascade`,
+      sql`truncate table product_prices, products, rate_limits, email_tokens, sessions, admin_recovery_codes, admins, users, companies restart identity cascade`,
     );
   }
 });
