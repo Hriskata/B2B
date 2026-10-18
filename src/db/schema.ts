@@ -1,4 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
+  boolean,
+  check,
   index,
   integer,
   pgEnum,
@@ -111,3 +114,31 @@ export const rateLimits = pgTable("rate_limits", {
   count: integer().notNull(),
   resetAt: timestamptz("reset_at").notNull(),
 });
+
+// Catalog. Prices live in their own table on purpose: public queries only
+// ever read `products`, so a price cannot leak into a page, a sitemap or a
+// cached response by selecting too many columns.
+export const products = pgTable("products", {
+  id: uuid().primaryKey().defaultRandom(),
+  slug: text().notNull().unique(),
+  name: text().notNull(),
+  description: text().notNull(),
+  published: boolean().notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamptz("created_at").notNull().defaultNow(),
+  updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+});
+
+export const productPrices = pgTable(
+  "product_prices",
+  {
+    productId: uuid("product_id")
+      .primaryKey()
+      .references(() => products.id, { onDelete: "cascade" }),
+    // Price for ONE unit, in the smallest currency unit (euro cents).
+    amountCents: integer("amount_cents").notNull(),
+    currency: text().notNull().default("EUR"),
+    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+  },
+  (t) => [check("product_prices_amount_positive", sql`${t.amountCents} > 0`)],
+);
