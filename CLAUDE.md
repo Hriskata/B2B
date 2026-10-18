@@ -88,7 +88,7 @@ B2B сайт с каталог на физически продукт, койт�
 Изискване: Node 24, Docker. Тайните са в `.env` (шаблон: `.env.example`), който не влиза в git.
 
 - Инсталация: `npm ci`
-- Локална тестова среда в Docker (приложение + PostgreSQL на 127.0.0.1): `docker compose up -d --build`; спиране: `docker compose down`
+- Локална тестова среда в Docker (приложение на http://127.0.0.1:3200 + PostgreSQL на 127.0.0.1:5432): `docker compose up -d --build`; спиране: `docker compose down`
 - Само базата в Docker, приложението на хоста: `docker compose up -d db`, после `npm run dev`
 - Тестове: `npm test`
 - Lint: `npm run lint`
