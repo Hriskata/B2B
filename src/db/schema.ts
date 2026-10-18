@@ -1,3 +1,113 @@
-// Drizzle table definitions. The data model (companies, users, admins,
-// products, inquiries) is added together with registration in phase 1.
-export {};
+import {
+  index,
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
+
+// Customers and admins live in separate tables on purpose (checklist D):
+// a bug in customer code must not be able to turn a customer into an admin.
+
+export const userStatus = pgEnum("user_status", ["unverified", "active", "blocked"]);
+export const adminRole = pgEnum("admin_role", ["viewer", "editor"]);
+export const adminStatus = pgEnum("admin_status", ["active", "blocked"]);
+export const subjectType = pgEnum("subject_type", ["user", "admin"]);
+// "full" is a normal session. The two mfa_* stages are short-lived sessions
+// issued after the admin password check and before the second factor.
+export const sessionStage = pgEnum("session_stage", ["full", "mfa_verify", "mfa_setup"]);
+export const emailTokenPurpose = pgEnum("email_token_purpose", [
+  "verify_email",
+  "reset_password",
+]);
+
+const timestamptz = (name: string) => timestamp(name, { withTimezone: true });
+
+export const companies = pgTable("companies", {
+  id: uuid().primaryKey().defaultRandom(),
+  eik: text().notNull().unique(),
+  name: text().notNull(),
+  createdAt: timestamptz("created_at").notNull().defaultNow(),
+});
+
+export const users = pgTable(
+  "users",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id),
+    // Stored lower-cased and trimmed; uniqueness is on this value.
+    email: text().notNull().unique(),
+    passwordHash: text("password_hash").notNull(),
+    status: userStatus().notNull().default("unverified"),
+    emailVerifiedAt: timestamptz("email_verified_at"),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("users_company_id_idx").on(t.companyId)],
+);
+
+export const admins = pgTable("admins", {
+  id: uuid().primaryKey().defaultRandom(),
+  email: text().notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  role: adminRole().notNull(),
+  status: adminStatus().notNull().default("active"),
+  // AES-256-GCM encrypted TOTP secret (see lib/crypto.ts). Set when setup
+  // starts; totpEnabledAt is set only after the first code is confirmed.
+  totpSecretEnc: text("totp_secret_enc"),
+  totpEnabledAt: timestamptz("totp_enabled_at"),
+  // Last accepted TOTP time step, to reject replay of a used code.
+  totpLastStep: integer("totp_last_step"),
+  createdAt: timestamptz("created_at").notNull().defaultNow(),
+});
+
+export const adminRecoveryCodes = pgTable(
+  "admin_recovery_codes",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    adminId: uuid("admin_id")
+      .notNull()
+      .references(() => admins.id, { onDelete: "cascade" }),
+    codeHash: text("code_hash").notNull(),
+    usedAt: timestamptz("used_at"),
+  },
+  (t) => [index("admin_recovery_codes_admin_id_idx").on(t.adminId)],
+);
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    // sha256 of the random cookie value; the raw value is never stored.
+    tokenHash: text("token_hash").primaryKey(),
+    subjectType: subjectType("subject_type").notNull(),
+    subjectId: uuid("subject_id").notNull(),
+    stage: sessionStage().notNull().default("full"),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    expiresAt: timestamptz("expires_at").notNull(),
+  },
+  (t) => [index("sessions_subject_idx").on(t.subjectType, t.subjectId)],
+);
+
+export const emailTokens = pgTable(
+  "email_tokens",
+  {
+    // sha256 of the random token sent by email.
+    tokenHash: text("token_hash").primaryKey(),
+    purpose: emailTokenPurpose().notNull(),
+    subjectType: subjectType("subject_type").notNull(),
+    subjectId: uuid("subject_id").notNull(),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    expiresAt: timestamptz("expires_at").notNull(),
+    usedAt: timestamptz("used_at"),
+  },
+  (t) => [index("email_tokens_subject_idx").on(t.subjectType, t.subjectId, t.purpose)],
+);
+
+export const rateLimits = pgTable("rate_limits", {
+  key: text().primaryKey(),
+  count: integer().notNull(),
+  resetAt: timestamptz("reset_at").notNull(),
+});
