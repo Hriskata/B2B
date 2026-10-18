@@ -85,7 +85,19 @@ B2B сайт с каталог на физически продукт, койт�
 
 ## Команди
 
-Попълват се във фаза 1, след настройката на проекта: инсталация, стартиране за разработка, тестове, lint, миграции. Не измисляй команди, които не съществуват.
+Изискване: Node 24, Docker. Тайните са в `.env` (шаблон: `.env.example`), който не влиза в git.
+
+- Инсталация: `npm ci`
+- Локална тестова среда в Docker (приложение + PostgreSQL на 127.0.0.1): `docker compose up -d --build`; спиране: `docker compose down`
+- Само базата в Docker, приложението на хоста: `docker compose up -d db`, после `npm run dev`
+- Тестове: `npm test`
+- Lint: `npm run lint`
+- Проверка на типовете: `npm run typecheck`
+- Продукционен build: `npm run build`
+- Миграции: `npm run db:generate` (от `src/db/schema.ts` към `drizzle/`), `npm run db:migrate` (изисква `DATABASE_URL`)
+- Проверка за работа: `GET /api/health` (използва се и от Docker healthcheck)
+
+Next.js е версия 16.4. Преди писане на код виж `AGENTS.md` и документацията в `node_modules/next/dist/docs/`.
 
 ## Кога една фаза е „готова“
 
