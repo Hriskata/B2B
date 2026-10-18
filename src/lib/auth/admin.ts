@@ -3,13 +3,14 @@ import { eq } from "drizzle-orm";
 import { getDb, tables } from "@/db";
 import { sendMail } from "../mail/send";
 import { resetPasswordMail } from "../mail/templates";
+import { getEnv } from "../env";
 import { hashPassword, verifyAgainstDummy, verifyPassword } from "../password";
 import { hit, isLimited, LIMITS, reset } from "../rate-limit";
 import { createSession, revokeAllSessions } from "./session";
 import { consumeEmailToken, createEmailToken, TOKEN_TTL_SECONDS } from "./tokens";
 
 export type AdminLoginResult =
-  | { status: "next"; step: "mfa_verify" | "mfa_setup" }
+  | { status: "next"; step: "full" | "mfa_verify" | "mfa_setup" }
   | { status: "invalid" | "rate_limited" };
 
 // Step 1 of admin login. Success here does NOT give access: it only issues a
@@ -46,6 +47,11 @@ export async function loginAdmin(
   }
 
   await reset(accountKey);
+  if (getEnv().ADMIN_2FA_DISABLED) {
+    // Local testing switch (see env.ts): password only, full session at once.
+    await createSession("admin", admin.id, "full");
+    return { status: "next", step: "full" };
+  }
   const step = admin.totpEnabledAt ? "mfa_verify" : "mfa_setup";
   await createSession("admin", admin.id, step);
   return { status: "next", step };

@@ -33,7 +33,9 @@ export async function adminLoginAction(prev: FormState, formData: FormData): Pro
       values,
     });
   }
-  redirect(result.step === "mfa_verify" ? "/admin/2fa" : "/admin/2fa/setup");
+  redirect(
+    result.step === "full" ? "/admin" : result.step === "mfa_verify" ? "/admin/2fa" : "/admin/2fa/setup",
+  );
 }
 
 // Step 2 for admins who already have 2FA: authenticator code or recovery code.

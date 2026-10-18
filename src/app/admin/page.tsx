@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth/current";
+import { getEnv } from "@/lib/env";
 import { adminLogoutAction } from "./actions";
 
 export const metadata: Metadata = { title: "Администрация" };
@@ -23,6 +24,11 @@ async function Content() {
   const admin = await requireAdmin();
   return (
     <div className="flex flex-col gap-4">
+      {getEnv().ADMIN_2FA_DISABLED && (
+        <p role="alert" className="rounded border border-red-700 px-3 py-2 text-red-700 dark:text-red-400">
+          Внимание: двуфакторната автентикация е изключена (само за локално тестване).
+        </p>
+      )}
       <p>
         Вписани сте като <strong>{admin.email}</strong> ({ROLE_LABEL[admin.role]}).
       </p>

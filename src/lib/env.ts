@@ -1,7 +1,10 @@
 import "server-only";
 import { z } from "zod";
 
-const schema = z.object({
+const LOCAL_URL = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/;
+
+const schema = z
+  .object({
   DATABASE_URL: z.string().min(1),
   // Public base URL, used in email links and to decide if cookies are Secure.
   APP_URL: z.url(),
@@ -22,7 +25,17 @@ const schema = z.object({
   TURNSTILE_SECRET_KEY: z.string().min(1),
   // How many reverse proxies append to X-Forwarded-For in front of the app.
   TRUSTED_PROXY_COUNT: z.coerce.number().int().min(0).default(1),
-});
+  // Local testing only: admins log in with the password alone. Refused unless
+  // APP_URL is localhost, so it cannot be left on in a real deployment.
+  ADMIN_2FA_DISABLED: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
+  })
+  .refine((env) => !env.ADMIN_2FA_DISABLED || LOCAL_URL.test(env.APP_URL), {
+    path: ["ADMIN_2FA_DISABLED"],
+    message: "can only be enabled when APP_URL is http://localhost or http://127.0.0.1",
+  });
 
 export type Env = z.infer<typeof schema>;
 
