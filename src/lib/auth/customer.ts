@@ -108,7 +108,14 @@ export async function loginCustomer(
     return "rate_limited";
   }
 
-  const user = (await getDb().select().from(tables.users).where(eq(tables.users.email, email)))[0];
+  const found = (
+    await getDb()
+      .select({ user: tables.users, companyBlockedAt: tables.companies.blockedAt })
+      .from(tables.users)
+      .innerJoin(tables.companies, eq(tables.companies.id, tables.users.companyId))
+      .where(eq(tables.users.email, email))
+  )[0];
+  const user = found?.user;
   let passwordOk = false;
   if (user) {
     passwordOk = await verifyPassword(user.passwordHash, password);
@@ -124,7 +131,7 @@ export async function loginCustomer(
 
   await reset(accountKey);
   // Only someone who knows the password learns these two states.
-  if (user.status === "blocked") return "blocked";
+  if (user.status === "blocked" || found.companyBlockedAt) return "blocked";
   if (user.status !== "active") return "unverified";
 
   await createSession("user", user.id);

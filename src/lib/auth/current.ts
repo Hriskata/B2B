@@ -2,6 +2,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getDb, tables } from "@/db";
+import { can, type Permission } from "../permissions";
 import { readSession, type SessionStage } from "./session";
 
 // These are the only ways server code learns who is logged in. Every page and
@@ -17,13 +18,15 @@ export async function getCurrentUser() {
       status: tables.users.status,
       companyId: tables.users.companyId,
       companyName: tables.companies.name,
+      companyBlockedAt: tables.companies.blockedAt,
     })
     .from(tables.users)
     .innerJoin(tables.companies, eq(tables.companies.id, tables.users.companyId))
     .where(eq(tables.users.id, session.subjectId));
   const user = rows[0];
-  // Blocked or unverified accounts have no access even with a valid cookie.
-  return user && user.status === "active" ? user : null;
+  // Blocked or unverified accounts, and accounts of a blocked company, have
+  // no access even with a valid cookie.
+  return user && user.status === "active" && !user.companyBlockedAt ? user : null;
 }
 
 export async function getCurrentAdmin(stage: SessionStage = "full") {
@@ -40,4 +43,14 @@ export async function requireAdmin() {
   const admin = await getCurrentAdmin("full");
   if (!admin) redirect("/admin/login");
   return admin;
+}
+
+// For Server Actions: the logged-in admin if they hold the permission.
+// Not logged in -> redirect to the login. Logged in without the permission ->
+// { ok: false }, and nothing must be changed.
+export async function authorize(permission: Permission) {
+  const admin = await requireAdmin();
+  return can(admin.role, permission)
+    ? ({ ok: true, admin } as const)
+    : ({ ok: false } as const);
 }
