@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  jsonb,
   check,
   index,
   integer,
@@ -32,6 +33,8 @@ export const companies = pgTable("companies", {
   id: uuid().primaryKey().defaultRandom(),
   eik: text().notNull().unique(),
   name: text().notNull(),
+  // Set when an admin blocks the whole company: all its users lose access.
+  blockedAt: timestamptz("blocked_at"),
   createdAt: timestamptz("created_at").notNull().defaultNow(),
 });
 
@@ -141,4 +144,23 @@ export const productPrices = pgTable(
     updatedAt: timestamptz("updated_at").notNull().defaultNow(),
   },
   (t) => [check("product_prices_amount_positive", sql`${t.amountCents} > 0`)],
+);
+
+// Journal of admin actions (prices, 2FA resets, blocking, catalog edits).
+// Rows are only ever inserted. The actor email is copied so the entry stays
+// readable if the admin account is changed later. `details` must never hold
+// passwords, tokens, codes or secrets.
+export const auditLog = pgTable(
+  "audit_log",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    actorAdminId: uuid("actor_admin_id").references(() => admins.id, { onDelete: "set null" }),
+    actorEmail: text("actor_email").notNull(),
+    action: text().notNull(),
+    targetType: text("target_type").notNull(),
+    targetId: text("target_id"),
+    details: jsonb().$type<Record<string, string | number | boolean | null>>().notNull().default({}),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("audit_log_created_at_idx").on(t.createdAt)],
 );

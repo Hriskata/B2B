@@ -15,6 +15,13 @@
       "when": 1792351746832,
       "tag": "0001_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792393345903,
+      "tag": "0002_admin_audit_and_company_block",
+      "breakpoints": true
     }
   ]
 }
