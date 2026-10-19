@@ -18,6 +18,8 @@ vi.mock("next/cache", () => ({
   cacheLife: () => {},
   cacheTag: () => {},
   revalidateTag: () => {},
+  updateTag: () => {},
+  refresh: () => {},
 }));
 
 // Mail is captured instead of sent.
@@ -42,7 +44,7 @@ beforeEach(async () => {
   if (hasDb) {
     const { getDb } = await import("@/db");
     await getDb().execute(
-      sql`truncate table product_prices, products, rate_limits, email_tokens, sessions, admin_recovery_codes, admins, users, companies restart identity cascade`,
+      sql`truncate table audit_log, product_prices, products, rate_limits, email_tokens, sessions, admin_recovery_codes, admins, users, companies restart identity cascade`,
     );
   }
 });

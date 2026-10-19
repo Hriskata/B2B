@@ -1,4 +1,5 @@
 import { NobleCryptoPlugin, ScureBase32Plugin, TOTP, generateSecret } from "otplib";
+import { eq } from "drizzle-orm";
 import { getDb, tables } from "@/db";
 import { encryptSecret, generateRecoveryCode, hashRecoveryCode } from "@/lib/crypto";
 import { hashPassword } from "@/lib/password";
@@ -27,7 +28,7 @@ export async function createUser(
     .insert(tables.companies)
     .values({ eik, name: overrides.companyName ?? "Тест ЕООД" })
     .onConflictDoNothing();
-  const company = (await db.select().from(tables.companies))[0];
+  const company = (await db.select().from(tables.companies).where(eq(tables.companies.eik, eik)))[0];
   const email = overrides.email ?? "client@firma.bg";
   const status = overrides.status ?? "active";
   const [user] = await db
