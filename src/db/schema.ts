@@ -118,6 +118,8 @@ export const rateLimits = pgTable("rate_limits", {
   resetAt: timestamptz("reset_at").notNull(),
 });
 
+export const productSeries = pgEnum("product_series", ["hds", "uds", "quick-fit", "mpo"]);
+
 // Catalog. Prices live in their own table on purpose: public queries only
 // ever read `products`, so a price cannot leak into a page, a sitemap or a
 // cached response by selecting too many columns.
@@ -128,6 +130,22 @@ export const products = pgTable("products", {
   description: text().notNull(),
   published: boolean().notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
+  // Technical data (phase 3B). All nullable: products created before the
+  // ODFFiber import (and any product without a known value) simply have none.
+  // Fibers per rack unit is computed, never stored.
+  sku: text().unique(),
+  series: productSeries(),
+  connector: text(),
+  ports: integer(),
+  mpoPorts: integer("mpo_ports"),
+  fibers: integer(),
+  maxFibersVariant: integer("max_fibers_variant"),
+  rackUnits: integer("rack_units"),
+  polish: text().array(),
+  splice: boolean(),
+  // null = not known yet (the catalog text does not say).
+  frontDoor: boolean("front_door"),
+  catalogPage: integer("catalog_page"),
   createdAt: timestamptz("created_at").notNull().defaultNow(),
   updatedAt: timestamptz("updated_at").notNull().defaultNow(),
 });

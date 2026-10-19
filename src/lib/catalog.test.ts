@@ -34,8 +34,14 @@ describeDb("public catalog data", () => {
     const list = await listPublicProducts();
     const one = await getPublicProduct("a");
 
-    expect(Object.keys(list[0]).sort()).toEqual(["description", "name", "slug"]);
-    expect(Object.keys(one!).sort()).toEqual(["description", "name", "slug"]);
+    // An explicit allow-list: a new column (or a price) must be added here on purpose.
+    const allowed = [
+      "connector", "description", "fibers", "fibersPerRu", "frontDoor", "maxFibersVariant", "mpoPorts",
+      "name", "polish", "ports", "rackUnits", "series", "sku", "slug", "splice",
+    ];
+    expect(Object.keys(list[0]).sort()).toEqual(allowed);
+    expect(Object.keys(one!).sort()).toEqual(allowed);
+    expect(JSON.stringify(list)).not.toMatch(/price|amount|cents/i);
     expect(JSON.stringify([list, one])).not.toMatch(/987|amount|price|EUR/i);
   });
 

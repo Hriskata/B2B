@@ -3,7 +3,7 @@ import type { PublicProduct } from "./catalog";
 // Structured data for search engines. It is built from PublicProduct, which
 // has no price field, and it deliberately has no `offers` (checklist A: a
 // guest must not get a price in JSON-LD).
-export function productJsonLd(product: PublicProduct, baseUrl: string) {
+export function productJsonLd(product: Pick<PublicProduct, "slug" | "name" | "description">, baseUrl: string) {
   const root = baseUrl.replace(/\/$/, "");
   return {
     "@context": "https://schema.org",
