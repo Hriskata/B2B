@@ -6,7 +6,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
   await connection();
   const root = getEnv().APP_URL.replace(/\/$/, "");
   return {
-    rules: { userAgent: "*", allow: "/", disallow: ["/admin", "/api/"] },
+    rules: { userAgent: "*", allow: "/", disallow: ["/admin", "/api/", "/inquiry", "/pending-approval"] },
     sitemap: `${root}/sitemap.xml`,
   };
 }

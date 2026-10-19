@@ -18,7 +18,7 @@ export default function AdminHomePage() {
   );
 }
 
-// Registrations to approve and the inquiries list arrive with phases 2 and 4.
+// Registrations and inquiries are empty placeholders until phases 2 and 4.
 async function Content() {
   const admin = await requireAdmin();
   const editor = can(admin.role, "edit_catalog");
@@ -37,6 +37,8 @@ async function Content() {
       <ul className="grid gap-3 sm:grid-cols-2">
         {[
           ["/admin/products", "Продукти и цени"],
+          ["/admin/registrations", "Чакащи регистрации"],
+          ["/admin/inquiries", "Запитвания"],
           ["/admin/customers", "Клиенти и фирми"],
           ["/admin/admins", "Администратори"],
           ["/admin/audit", "Журнал на промените"],

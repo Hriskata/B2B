@@ -40,6 +40,12 @@ async function AdminNav() {
         <Link href="/admin/products" className="underline">
           Продукти
         </Link>
+        <Link href="/admin/registrations" className="underline">
+          Регистрации
+        </Link>
+        <Link href="/admin/inquiries" className="underline">
+          Запитвания
+        </Link>
         <Link href="/admin/customers" className="underline">
           Клиенти
         </Link>
