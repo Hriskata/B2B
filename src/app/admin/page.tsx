@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth/current";
 import { getEnv } from "@/lib/env";
-import { adminLogoutAction } from "./actions";
+import { can } from "@/lib/permissions";
 
 export const metadata: Metadata = { title: "Администрация" };
 
-const ROLE_LABEL = { viewer: "Само преглед", editor: "Преглед и редакция" } as const;
-
 export default function AdminHomePage() {
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12">
+    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
       <h1 className="mb-6 text-2xl font-semibold">Администрация</h1>
       <Suspense>
         <Content />
@@ -19,9 +18,10 @@ export default function AdminHomePage() {
   );
 }
 
-// Placeholder: products, inquiries and approvals come in phases 3-5.
+// Registrations to approve and the inquiries list arrive with phases 2 and 4.
 async function Content() {
   const admin = await requireAdmin();
+  const editor = can(admin.role, "edit_catalog");
   return (
     <div className="flex flex-col gap-4">
       {getEnv().ADMIN_2FA_DISABLED && (
@@ -30,13 +30,27 @@ async function Content() {
         </p>
       )}
       <p>
-        Вписани сте като <strong>{admin.email}</strong> ({ROLE_LABEL[admin.role]}).
+        {editor
+          ? "Можете да преглеждате и да променяте продукти, цени и профили."
+          : "Имате право само на преглед. Промените са недостъпни."}
       </p>
-      <form action={adminLogoutAction}>
-        <button type="submit" className="underline">
-          Изход
-        </button>
-      </form>
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {[
+          ["/admin/products", "Продукти и цени"],
+          ["/admin/customers", "Клиенти и фирми"],
+          ["/admin/admins", "Администратори"],
+          ["/admin/audit", "Журнал на промените"],
+        ].map(([href, label]) => (
+          <li key={href}>
+            <Link
+              href={href}
+              className="block rounded-lg border border-zinc-300 p-4 font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+            >
+              {label}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -26,6 +26,10 @@ type FieldProps = {
   state: FormState;
   required?: boolean;
   maxLength?: number;
+  // Initial value for edit forms; a value returned after an error wins.
+  defaultValue?: string;
+  disabled?: boolean;
+  multiline?: boolean;
 };
 
 export function Field({
@@ -38,6 +42,9 @@ export function Field({
   state,
   required = true,
   maxLength,
+  defaultValue,
+  disabled,
+  multiline = false,
 }: FieldProps) {
   const error = state.fieldErrors?.[name];
   const id = `f-${name}`;
@@ -46,20 +53,36 @@ export function Field({
       <label htmlFor={id} className="font-medium">
         {label}
       </label>
-      <input
-        id={id}
-        name={name}
-        type={type}
-        autoComplete={autoComplete}
-        inputMode={inputMode}
-        required={required}
-        maxLength={maxLength}
-        // Values come back only for non-secret fields (see FormState).
-        defaultValue={type === "password" ? undefined : state.values?.[name]}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
-        className="rounded border border-zinc-400 bg-background px-3 py-2"
-      />
+      {multiline ? (
+        <textarea
+          id={id}
+          name={name}
+          rows={6}
+          required={required}
+          maxLength={maxLength}
+          disabled={disabled}
+          defaultValue={state.values?.[name] ?? defaultValue}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+          className="rounded border border-zinc-400 bg-background px-3 py-2 disabled:opacity-70"
+        />
+      ) : (
+        <input
+          id={id}
+          name={name}
+          type={type}
+          autoComplete={autoComplete}
+          inputMode={inputMode}
+          required={required}
+          maxLength={maxLength}
+          disabled={disabled}
+          // Values come back only for non-secret fields (see FormState).
+          defaultValue={type === "password" ? undefined : (state.values?.[name] ?? defaultValue)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+          className="rounded border border-zinc-400 bg-background px-3 py-2 disabled:opacity-70"
+        />
+      )}
       {hint && !error && (
         <p id={`${id}-hint`} className="text-sm text-zinc-600 dark:text-zinc-400">
           {hint}
@@ -88,5 +111,28 @@ export function FormMessage({ state }: { state: FormState }) {
     >
       {state.message}
     </p>
+  );
+}
+
+export function Checkbox({
+  name,
+  label,
+  defaultChecked,
+  disabled,
+  state,
+}: {
+  name: string;
+  label: string;
+  defaultChecked: boolean;
+  disabled?: boolean;
+  state: FormState;
+}) {
+  // After an error the submitted choice comes back in state.values.
+  const checked = state.values ? state.values[name] === "on" : defaultChecked;
+  return (
+    <label className="flex items-center gap-2">
+      <input type="checkbox" name={name} defaultChecked={checked} disabled={disabled} />
+      {label}
+    </label>
   );
 }
