@@ -51,6 +51,8 @@ services:
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:?Set TURNSTILE_SECRET_KEY in .env}
       TRUSTED_PROXY_COUNT: ${TRUSTED_PROXY_COUNT:-1}
       ADMIN_2FA_DISABLED: ${ADMIN_2FA_DISABLED:-false}
+      # Optional. Analytics loads only after the visitor accepts cookies.
+      GA_MEASUREMENT_ID: ${GA_MEASUREMENT_ID:-}
     ports:
       - "127.0.0.1:3200:3000"
     depends_on:
