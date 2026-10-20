@@ -2,10 +2,12 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { ProductCard } from "@/components/product-card";
 import { PricesProvider } from "@/components/prices";
+import { CatalogFiltersForm } from "@/components/catalog-filters";
 import { listPublicProducts } from "@/lib/catalog";
+import { applyFilters, parseFilters } from "@/lib/catalog-filter";
 
 // Template copy; the real texts come from the product owner (phase 6).
-export default function Home() {
+export default function Home({ searchParams }: PageProps<"/">) {
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-12">
       <section className="mb-8 max-w-2xl sm:mb-12">
@@ -16,7 +18,7 @@ export default function Home() {
         </p>
       </section>
       <Suspense fallback={<GridSkeleton />}>
-        <Catalog />
+        <Catalog searchParams={searchParams} />
       </Suspense>
     </main>
   );
@@ -24,14 +26,21 @@ export default function Home() {
 
 // Runs at request time (so the build needs no database); the product list
 // itself is cached and shared, and carries no prices.
-async function Catalog() {
+async function Catalog({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
   await connection();
-  const products = await listPublicProducts();
-  if (products.length === 0) {
+  const all = await listPublicProducts();
+  if (all.length === 0) {
     return <p>Все още няма добавени продукти.</p>;
   }
+  const filters = parseFilters(await searchParams);
+  const products = applyFilters(all, filters);
   return (
     <PricesProvider slugs={products.map((p) => p.slug)}>
+      <CatalogFiltersForm filters={filters} />
+      <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400" aria-live="polite">
+        Показани модели: {products.length} от {all.length}
+      </p>
+      {products.length === 0 && <p>Няма модели с избраните филтри.</p>}
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((product) => (
           <ProductCard key={product.slug} product={product} />

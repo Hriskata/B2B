@@ -4,7 +4,7 @@
 // "ЧАКА ДАННИ" instead of a made-up value.
 
 export const SITE = {
-  name: "B2B каталог", // placeholder brand until the owner provides one
+  name: "ODFFiber", // text brand until the logo is provided
   operator: {
     legalName: null as string | null,
     eik: null as string | null,

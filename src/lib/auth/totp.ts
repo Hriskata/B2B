@@ -11,7 +11,7 @@ import {
 } from "../crypto";
 import { hit, isLimited, LIMITS, reset } from "../rate-limit";
 
-const ISSUER = "B2B каталог";
+const ISSUER = "ODFFiber";
 const RECOVERY_CODE_COUNT = 10;
 // Accept the previous/next 30-second step to tolerate small clock drift.
 const TIME_TOLERANCE_SECONDS = 30;

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Price, PricesProvider } from "@/components/prices";
 import { ProductImage } from "@/components/product-image";
+import { ProductSpecs } from "@/components/product-specs";
 import { getPublicProduct } from "@/lib/catalog";
 import { getEnv } from "@/lib/env";
 import { productJsonLd, serializeJsonLd } from "@/lib/seo";
@@ -43,6 +44,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
         <div className="flex flex-col gap-4">
           <h1 className="text-3xl font-semibold">{product.name}</h1>
           <p className="whitespace-pre-line text-zinc-700 dark:text-zinc-300">{product.description}</p>
+          <ProductSpecs product={product} />
           <PricesProvider slugs={[product.slug]}>
             <div className="rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
               <Price slug={product.slug} className="text-lg" />

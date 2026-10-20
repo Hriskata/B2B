@@ -7,7 +7,7 @@ import "./globals.css";
 
 // Placeholder site name until branding is provided.
 export const metadata: Metadata = {
-  title: "B2B каталог",
+  title: "ODFFiber",
   description: "Каталог за фирми",
 };
 

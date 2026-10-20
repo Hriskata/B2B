@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { PublicProduct } from "@/lib/catalog";
 import { Price } from "./prices";
 import { ProductImage } from "./product-image";
+import { specSummary } from "./product-specs";
 
 export function ProductCard({ product }: { product: PublicProduct }) {
   return (
@@ -15,7 +16,8 @@ export function ProductCard({ product }: { product: PublicProduct }) {
             {product.name}
           </Link>
         </h2>
-        <p className="line-clamp-3 text-sm text-zinc-600 dark:text-zinc-400">{product.description}</p>
+        {product.sku && <p className="text-xs text-zinc-500">{product.sku}</p>}
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">{specSummary(product) ?? product.description}</p>
         <Price slug={product.slug} className="mt-auto pt-2 text-sm" />
       </div>
     </li>
