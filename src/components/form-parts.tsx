@@ -6,11 +6,7 @@ import type { FormState } from "@/lib/form-state";
 export function SubmitButton({ children }: { children: React.ReactNode }) {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded bg-foreground px-4 py-2 font-medium text-background disabled:opacity-60"
-    >
+    <button type="submit" disabled={pending} className="btn btn-primary">
       {pending ? "Моля, изчакайте…" : children}
     </button>
   );
@@ -63,8 +59,10 @@ export function Field({
           disabled={disabled}
           defaultValue={state.values?.[name] ?? defaultValue}
           aria-invalid={error ? true : undefined}
-          aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
-          className="rounded border border-zinc-400 bg-background px-3 py-2 disabled:opacity-70"
+          aria-describedby={
+            error ? `${id}-error` : hint ? `${id}-hint` : undefined
+          }
+          className="input"
         />
       ) : (
         <input
@@ -77,19 +75,25 @@ export function Field({
           maxLength={maxLength}
           disabled={disabled}
           // Values come back only for non-secret fields (see FormState).
-          defaultValue={type === "password" ? undefined : (state.values?.[name] ?? defaultValue)}
+          defaultValue={
+            type === "password"
+              ? undefined
+              : (state.values?.[name] ?? defaultValue)
+          }
           aria-invalid={error ? true : undefined}
-          aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
-          className="rounded border border-zinc-400 bg-background px-3 py-2 disabled:opacity-70"
+          aria-describedby={
+            error ? `${id}-error` : hint ? `${id}-hint` : undefined
+          }
+          className="input"
         />
       )}
       {hint && !error && (
-        <p id={`${id}-hint`} className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p id={`${id}-hint`} className="text-sm text-secondary">
           {hint}
         </p>
       )}
       {error && (
-        <p id={`${id}-error`} className="text-sm text-red-700 dark:text-red-400">
+        <p id={`${id}-error`} className="text-sm text-ember-300">
           {error}
         </p>
       )}
@@ -105,8 +109,8 @@ export function FormMessage({ state }: { state: FormState }) {
       role={isError ? "alert" : "status"}
       className={
         isError
-          ? "rounded border border-red-700 px-3 py-2 text-red-700 dark:text-red-400"
-          : "rounded border border-green-700 px-3 py-2 text-green-800 dark:text-green-400"
+          ? "rounded-sm border border-line-ember bg-ember-900 px-3 py-2 text-ember-300"
+          : "rounded-sm border border-line bg-card px-3 py-2"
       }
     >
       {state.message}
@@ -131,7 +135,12 @@ export function Checkbox({
   const checked = state.values ? state.values[name] === "on" : defaultChecked;
   return (
     <label className="flex items-center gap-2">
-      <input type="checkbox" name={name} defaultChecked={checked} disabled={disabled} />
+      <input
+        type="checkbox"
+        name={name}
+        defaultChecked={checked}
+        disabled={disabled}
+      />
       {label}
     </label>
   );

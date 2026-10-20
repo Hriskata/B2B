@@ -11,19 +11,25 @@ import { SERIES_KEYS, seriesName } from "@/lib/series";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-export function CatalogView({ lang, searchParams }: { lang: Lang; searchParams: SearchParams }) {
+export function CatalogView({
+  lang,
+  searchParams,
+}: {
+  lang: Lang;
+  searchParams: SearchParams;
+}) {
   const t = getDict(lang).catalog;
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-12">
+    <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 py-8 sm:py-12">
       <section className="mb-8 max-w-2xl sm:mb-12">
-        <h1 className="text-3xl font-semibold sm:text-4xl">{t.title}</h1>
-        <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-400">{t.intro}</p>
+        <h1>{t.title}</h1>
+        <p className="mt-3 text-lg text-secondary">{t.intro}</p>
         <nav aria-label={t.seriesNav} className="mt-4 flex flex-wrap gap-2">
           {SERIES_KEYS.map((key) => (
             <Link
               key={key}
               href={localePath(lang, `/series/${key}`)}
-              className="rounded-full border border-zinc-400 px-3 py-1 text-sm hover:bg-zinc-100 dark:border-zinc-600 dark:hover:bg-zinc-900"
+              className="pill"
             >
               {seriesName(key, lang)}
             </Link>
@@ -39,7 +45,13 @@ export function CatalogView({ lang, searchParams }: { lang: Lang; searchParams: 
 
 // Runs at request time (so the build needs no database); the product list
 // itself is cached and shared, and carries no prices.
-async function Catalog({ lang, searchParams }: { lang: Lang; searchParams: SearchParams }) {
+async function Catalog({
+  lang,
+  searchParams,
+}: {
+  lang: Lang;
+  searchParams: SearchParams;
+}) {
   await connection();
   const t = getDict(lang).catalog;
   const all = await listPublicProducts();
@@ -51,7 +63,7 @@ async function Catalog({ lang, searchParams }: { lang: Lang; searchParams: Searc
   return (
     <PricesProvider slugs={products.map((p) => p.slug)}>
       <CatalogFiltersForm filters={filters} lang={lang} />
-      <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400" aria-live="polite">
+      <p className="mb-4 text-sm text-secondary" aria-live="polite">
         {t.shown(products.length, all.length)}
       </p>
       {products.length === 0 && <p>{t.noMatches}</p>}
@@ -66,9 +78,12 @@ async function Catalog({ lang, searchParams }: { lang: Lang; searchParams: Searc
 
 function GridSkeleton() {
   return (
-    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden>
+    <ul
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      aria-hidden
+    >
       {Array.from({ length: 6 }, (_, i) => (
-        <li key={i} className="h-72 animate-pulse rounded-lg bg-zinc-200 dark:bg-zinc-800" />
+        <li key={i} className="h-72 animate-pulse rounded-lg bg-card" />
       ))}
     </ul>
   );

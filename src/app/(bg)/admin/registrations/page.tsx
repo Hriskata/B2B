@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Регистрации (админ)"
 // "Отхвърли" (editor only). Empty until the company check exists.
 export default function AdminRegistrationsPage() {
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+    <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 py-8">
       <Suspense>
         <Content />
       </Suspense>

@@ -30,21 +30,22 @@ export function AddAdminForm() {
           name="role"
           defaultValue={state.values?.role ?? "viewer"}
           aria-invalid={state.fieldErrors?.role ? true : undefined}
-          className="rounded border border-zinc-400 bg-transparent px-3 py-2 dark:border-zinc-600"
+          className="input"
         >
           <option value="viewer">Само преглед</option>
           <option value="editor">Преглед и редакция</option>
         </select>
         {state.fieldErrors?.role && (
-          <p role="alert" className="text-sm text-red-700 dark:text-red-400">
+          <p role="alert" className="text-sm text-ember-300">
             {state.fieldErrors.role}
           </p>
         )}
       </div>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        Новият админ получава временна парола (ще я видите след добавянето). При първия вход настройва
-        2FA и е длъжен веднага да смени паролата. Ролята „Преглед и редакция“ може да променя продукти и
-        цени, да блокира профили и да добавя други админи.
+      <p className="text-sm text-secondary">
+        Новият админ получава временна парола (ще я видите след добавянето). При
+        първия вход настройва 2FA и е длъжен веднага да смени паролата. Ролята
+        „Преглед и редакция“ може да променя продукти и цени, да блокира профили
+        и да добавя други админи.
       </p>
       <SubmitButton>Добави администратор</SubmitButton>
     </form>

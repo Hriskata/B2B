@@ -6,24 +6,34 @@ import { Price } from "./prices";
 import { ProductImage } from "./product-image";
 import { specSummary } from "./product-specs";
 
-export function ProductCard({ product, lang }: { product: PublicProduct; lang: Lang }) {
+export function ProductCard({
+  product,
+  lang,
+}: {
+  product: PublicProduct;
+  lang: Lang;
+}) {
   const href = localePath(lang, `/products/${product.slug}`);
   return (
-    <li className="flex flex-col overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700">
+    <li className="card card-interactive flex flex-col overflow-hidden p-3">
       <Link href={href} className="block" aria-label={product.name}>
         <ProductImage sku={product.sku} alt={product.name} />
       </Link>
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <h2 className="text-lg font-semibold">
-          <Link href={href} className="hover:underline">
+      <div className="flex flex-1 flex-col gap-2 px-2 pb-2 pt-4">
+        <h2 className="t-card-title">
+          <Link href={href} className="text-primary hover:text-ember-300">
             {product.name}
           </Link>
         </h2>
-        {product.sku && <p className="text-xs text-zinc-500">{product.sku}</p>}
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        {product.sku && <p className="t-small text-secondary">{product.sku}</p>}
+        <p className="text-sm text-secondary">
           {specSummary(product, lang) ?? productDescription(product, lang)}
         </p>
-        <Price slug={product.slug} lang={lang} className="mt-auto pt-2 text-sm" />
+        <Price
+          slug={product.slug}
+          lang={lang}
+          className="mt-auto pt-2 text-sm"
+        />
       </div>
     </li>
   );

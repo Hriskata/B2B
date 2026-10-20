@@ -13,7 +13,10 @@ import { seriesName } from "@/lib/series";
 
 type Params = Promise<{ key: string }>;
 
-export async function seriesMetadata(lang: Lang, params: Params): Promise<Metadata> {
+export async function seriesMetadata(
+  lang: Lang,
+  params: Params,
+): Promise<Metadata> {
   const { key } = await params;
   const t = getDict(lang);
   const name = seriesName(key, lang);
@@ -26,22 +29,34 @@ export async function seriesMetadata(lang: Lang, params: Params): Promise<Metada
     title: name,
     description,
     alternates: alternatesFor(lang, path),
-    openGraph: { type: "website", title: name, description, url: pageUrl(lang, path), locale: t.ogLocale },
+    openGraph: {
+      type: "website",
+      title: name,
+      description,
+      url: pageUrl(lang, path),
+      locale: t.ogLocale,
+    },
   };
 }
 
-export async function SeriesView({ lang, params }: { lang: Lang; params: Params }) {
+export async function SeriesView({
+  lang,
+  params,
+}: {
+  lang: Lang;
+  params: Params;
+}) {
   const { key } = await params;
   const t = getDict(lang).seriesPage;
   const name = seriesName(key, lang);
   if (!name) notFound();
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-12">
+    <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 py-8 sm:py-12">
       <Link href={localePath(lang, "/products")} className="text-sm underline">
         {t.back}
       </Link>
-      <h1 className="mt-6 text-3xl font-semibold">{name}</h1>
+      <h1 className="mt-6">{name}</h1>
       <Suspense>
         <Breadcrumbs lang={lang} seriesKey={key} name={name} />
       </Suspense>
@@ -49,13 +64,13 @@ export async function SeriesView({ lang, params }: { lang: Lang; params: Params 
         <Models seriesKey={key} lang={lang} />
       </Suspense>
       <section className="mt-10">
-        <h2 className="mb-3 text-xl font-semibold">{t.commonTitle}</h2>
-        <ul className="list-disc pl-5 text-zinc-700 dark:text-zinc-300">
+        <h2 className="mb-3">{t.commonTitle}</h2>
+        <ul className="list-disc pl-5 text-secondary">
           {t.common.map((line) => (
             <li key={line}>{line}</li>
           ))}
         </ul>
-        <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{t.commonNote}</p>
+        <p className="mt-3 text-sm text-secondary">{t.commonNote}</p>
       </section>
     </main>
   );
@@ -64,18 +79,27 @@ export async function SeriesView({ lang, params }: { lang: Lang; params: Params 
 async function Models({ seriesKey, lang }: { seriesKey: string; lang: Lang }) {
   await connection();
   const t = getDict(lang).seriesPage;
-  const products = (await listPublicProducts()).filter((p) => p.series === seriesKey);
+  const products = (await listPublicProducts()).filter(
+    (p) => p.series === seriesKey,
+  );
   if (products.length === 0) return <p className="mt-6">{t.empty}</p>;
 
   const fibers = products.flatMap((p) => (p.fibers === null ? [] : [p.fibers]));
-  const units = [...new Set(products.flatMap((p) => (p.rackUnits === null ? [] : [p.rackUnits])))].sort(
-    (a, b) => a - b,
-  );
+  const units = [
+    ...new Set(
+      products.flatMap((p) => (p.rackUnits === null ? [] : [p.rackUnits])),
+    ),
+  ].sort((a, b) => a - b);
   return (
     <>
       {/* Built only from the numbers of the models listed below. */}
-      <p className="mt-3 max-w-2xl text-zinc-700 dark:text-zinc-300">
-        {t.summary(products.length, Math.min(...fibers), Math.max(...fibers), units.map((u) => `${u}RU`).join(", "))}
+      <p className="mt-3 max-w-2xl text-secondary">
+        {t.summary(
+          products.length,
+          Math.min(...fibers),
+          Math.max(...fibers),
+          units.map((u) => `${u}RU`).join(", "),
+        )}
       </p>
       <PricesProvider slugs={products.map((p) => p.slug)}>
         <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -89,7 +113,15 @@ async function Models({ seriesKey, lang }: { seriesKey: string; lang: Lang }) {
 }
 
 // Structured data only (no visible output). Reads APP_URL, so it runs at request time.
-async function Breadcrumbs({ lang, seriesKey, name }: { lang: Lang; seriesKey: string; name: string }) {
+async function Breadcrumbs({
+  lang,
+  seriesKey,
+  name,
+}: {
+  lang: Lang;
+  seriesKey: string;
+  name: string;
+}) {
   await connection();
   const t = getDict(lang);
   return (

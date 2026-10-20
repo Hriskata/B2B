@@ -10,22 +10,34 @@ import { LanguageSwitch } from "./language-switch";
 export function SiteHeader({ lang }: { lang: Lang }) {
   const t = getDict(lang).header;
   return (
-    <header className="border-b border-zinc-300 dark:border-zinc-700">
-      <nav className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-3">
+    <header className="border-b border-line bg-base">
+      <nav className="mx-auto flex w-full max-w-[1120px] items-center justify-between gap-4 px-4 py-3">
         <div className="flex items-center gap-5">
-          <Link href={localePath(lang, "/")} className="font-semibold">
+          <Link
+            href={localePath(lang, "/")}
+            className="t-card-title text-primary hover:text-primary"
+          >
             ODFFiber
           </Link>
-          <Link href={localePath(lang, "/products")} className="text-sm underline">
+          <Link href={localePath(lang, "/products")} className="t-small">
             {t.products}
           </Link>
-          <Link href={localePath(lang, "/about")} className="hidden text-sm underline sm:inline">
+          <Link
+            href={localePath(lang, "/about")}
+            className="t-small hidden sm:inline"
+          >
             {t.about}
           </Link>
-          <Link href={localePath(lang, "/contacts")} className="hidden text-sm underline sm:inline">
+          <Link
+            href={localePath(lang, "/contacts")}
+            className="t-small hidden sm:inline"
+          >
             {t.contacts}
           </Link>
-          <Link href={localePath(lang, "/faq")} className="hidden text-sm underline sm:inline">
+          <Link
+            href={localePath(lang, "/faq")}
+            className="t-small hidden sm:inline"
+          >
             {t.faq}
           </Link>
         </div>
@@ -48,11 +60,14 @@ async function AuthLinks({ lang }: { lang: Lang }) {
   const user = await getCurrentUser();
   if (!user) {
     return (
-      <div className="flex gap-4 text-sm">
-        <Link href="/login" className="underline">
+      <div className="flex items-center gap-2 text-sm">
+        <Link href="/login" className="btn btn-secondary">
           {t.login}
         </Link>
-        <Link href="/register" className="underline">
+        <Link
+          href="/register"
+          className="btn btn-primary hidden sm:inline-flex"
+        >
           {t.register}
         </Link>
       </div>
@@ -63,7 +78,7 @@ async function AuthLinks({ lang }: { lang: Lang }) {
       <span className="truncate" title={user.companyName}>
         {user.email}
       </span>
-      <button type="submit" className="underline">
+      <button type="submit" className="btn btn-secondary">
         {t.logout}
       </button>
     </form>

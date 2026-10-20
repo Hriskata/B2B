@@ -9,5 +9,10 @@ import { ConsentManager } from "./consent-manager";
 export async function Analytics({ lang }: { lang: Lang }) {
   await connection();
   const raw = process.env.GA_MEASUREMENT_ID?.trim();
-  return <ConsentManager measurementId={raw && isValidMeasurementId(raw) ? raw : null} lang={lang} />;
+  return (
+    <ConsentManager
+      measurementId={raw && isValidMeasurementId(raw) ? raw : null}
+      lang={lang}
+    />
+  );
 }

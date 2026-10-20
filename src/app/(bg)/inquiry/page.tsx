@@ -26,7 +26,7 @@ async function Content() {
   if (!user) {
     return (
       <>
-        <h1 className="text-3xl font-semibold">Запитване</h1>
+        <h1>Запитване</h1>
         <p className="mt-4">
           За да изпратите запитване, първо{" "}
           <Link href="/login" className="underline">

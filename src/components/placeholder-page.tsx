@@ -16,12 +16,12 @@ export function PlaceholderPage({
 }) {
   return (
     <>
-      <h1 className="text-3xl font-semibold">{title}</h1>
+      <h1>{title}</h1>
       <div
         role="note"
-        className={`mt-6 rounded-lg border-2 border-dashed border-amber-600 p-4 dark:border-amber-500 ${wide ? "" : "max-w-2xl"}`}
+        className={`mt-6 rounded-lg border border-dashed border-line-ember p-4 ${wide ? "" : "max-w-2xl"}`}
       >
-        <p className="font-semibold">ЧАКА РЕШЕНИЕ ИЛИ ИНФОРМАЦИЯ ({phase})</p>
+        <p className="font-medium">ЧАКА РЕШЕНИЕ ИЛИ ИНФОРМАЦИЯ ({phase})</p>
         <p className="mt-2">Страницата е заготовка и е празна нарочно. Чака:</p>
         <ul className="mt-2 list-disc pl-6">
           {waitingFor.map((item) => (

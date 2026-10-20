@@ -15,48 +15,57 @@ import { SITE } from "@/lib/site";
 export function HomeView({ lang }: { lang: Lang }) {
   const t = getDict(lang).home;
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-12">
-      <section className="max-w-3xl">
-        <h1 className="text-3xl font-semibold sm:text-5xl">{SITE.name}</h1>
-        <p className="mt-3 text-xl text-zinc-700 dark:text-zinc-300">{t.lead}</p>
-        <div className="mt-6 flex flex-wrap gap-3">
+    <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 py-8 sm:py-12">
+      {/* Hero: a panel with the ember glow along its bottom edge. */}
+      <section className="panel panel-glow px-6 pb-40 pt-16 text-center sm:px-12 sm:pb-52 sm:pt-24">
+        <h1 className="t-display-xl mx-auto max-w-3xl text-primary">
+          {SITE.name}
+        </h1>
+        <p className="mx-auto mt-4 max-w-2xl text-lg text-secondary">
+          {t.lead}
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href={localePath(lang, "/products")}
-            className="rounded bg-zinc-900 px-5 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+            className="btn btn-primary"
           >
             {t.browse}
           </Link>
-          <Link href="/inquiry" className="rounded border border-zinc-500 px-5 py-3 font-medium">
+          <Link href="/inquiry" className="btn btn-secondary">
             {t.quote}
           </Link>
         </div>
-        <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{t.note}</p>
+        <p className="mx-auto mt-4 max-w-xl text-sm text-secondary">{t.note}</p>
       </section>
 
-      <Suspense fallback={<div className="mt-10 h-24" aria-hidden />}>
+      <Suspense fallback={<div className="mt-8 h-24" aria-hidden />}>
         <Numbers lang={lang} />
       </Suspense>
 
-      <section className="mt-12">
-        <h2 className="mb-4 text-2xl font-semibold">{t.featuresTitle}</h2>
+      <section className="mt-16 sm:mt-24">
+        <h2 className="t-display-l mb-8 text-center text-primary">
+          {t.featuresTitle}
+        </h2>
         <ul className="grid gap-4 sm:grid-cols-3">
           {t.features.map(([title, text]) => (
-            <li key={title} className="rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
-              <h3 className="font-semibold">{title}</h3>
-              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{text}</p>
+            <li key={title} className="card card-pad">
+              <h3 className="text-primary">{title}</h3>
+              <p className="mt-1 text-sm text-secondary">{text}</p>
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="mt-12">
-        <h2 className="mb-4 text-2xl font-semibold">{t.seriesTitle}</h2>
+      <section className="mt-16 sm:mt-24">
+        <h2 className="t-display-l mb-8 text-center text-primary">
+          {t.seriesTitle}
+        </h2>
         <ul className="grid gap-4 sm:grid-cols-2">
           {SERIES_KEYS.map((key) => (
             <li key={key}>
               <Link
                 href={localePath(lang, `/series/${key}`)}
-                className="block rounded-lg border border-zinc-300 p-4 font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                className="card card-pad card-interactive block font-medium text-primary"
               >
                 {seriesName(key, lang)}
               </Link>
@@ -65,26 +74,31 @@ export function HomeView({ lang }: { lang: Lang }) {
         </ul>
       </section>
 
-      <section className="mt-12">
-        <h2 className="mb-4 text-2xl font-semibold">{t.applicationsTitle}</h2>
+      <section className="mt-16 sm:mt-24">
+        <h2 className="t-display-l mb-8 text-center text-primary">
+          {t.applicationsTitle}
+        </h2>
         <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {t.applications.map(([abbr, text]) => (
-            <li key={abbr} className="rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
-              <div className="text-xl font-semibold">{abbr}</div>
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">{text}</div>
+            <li key={abbr} className="card card-pad">
+              <div className="t-card-title text-primary">{abbr}</div>
+              <div className="text-sm text-secondary">{text}</div>
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="mt-12 rounded-lg border border-zinc-300 p-6 dark:border-zinc-700">
-        <h2 className="text-xl font-semibold">{t.ctaTitle}</h2>
-        <p className="mt-1 text-zinc-700 dark:text-zinc-300">{t.ctaText}</p>
-        <div className="mt-4 flex gap-4">
-          <Link href="/register" className="underline">
+      {/* Closing call to action: a panel with the ember glow. */}
+      <section className="panel panel-glow mt-16 px-6 pb-36 pt-16 text-center sm:mt-24 sm:px-12 sm:pb-44">
+        <h2 className="t-display-l mx-auto max-w-2xl text-primary">
+          {t.ctaTitle}
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-secondary">{t.ctaText}</p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link href="/register" className="btn btn-primary">
             {t.ctaRegister}
           </Link>
-          <Link href="/login" className="underline">
+          <Link href="/login" className="btn btn-secondary">
             {t.ctaLogin}
           </Link>
         </div>
@@ -104,7 +118,9 @@ async function Numbers({ lang }: { lang: Lang }) {
   const dict = getDict(lang);
   const products = await listPublicProducts();
   const fibers = products.flatMap((p) => (p.fibers === null ? [] : [p.fibers]));
-  const density = products.flatMap((p) => (p.fibersPerRu === null ? [] : [p.fibersPerRu]));
+  const density = products.flatMap((p) =>
+    p.fibersPerRu === null ? [] : [p.fibersPerRu],
+  );
   if (products.length === 0 || fibers.length === 0) return null;
   const nf = new Intl.NumberFormat(dict.localeTag, { useGrouping: false });
   const items: [string, string][] = [
@@ -115,9 +131,9 @@ async function Numbers({ lang }: { lang: Lang }) {
   return (
     <ul className="mt-10 grid gap-4 sm:grid-cols-3">
       {items.map(([value, label]) => (
-        <li key={label} className="rounded-lg border border-zinc-300 p-4 text-center dark:border-zinc-700">
-          <div className="text-4xl font-semibold">{value}</div>
-          <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{label}</div>
+        <li key={label} className="card card-pad text-center">
+          <div className="t-price">{value}</div>
+          <div className="mt-1 text-sm text-secondary">{label}</div>
         </li>
       ))}
     </ul>
@@ -130,7 +146,11 @@ async function OrganizationData() {
     // Serialised and escaped by serializeJsonLd; name and URL only.
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationJsonLd(SITE.name, getEnv().APP_URL)) }}
+      dangerouslySetInnerHTML={{
+        __html: serializeJsonLd(
+          organizationJsonLd(SITE.name, getEnv().APP_URL),
+        ),
+      }}
     />
   );
 }

@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Смяна на парола (адм
 export default function AdminChangePasswordPage() {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 py-12">
-      <h1 className="mb-6 text-2xl font-semibold">Смяна на парола</h1>
+      <h1 className="mb-6">Смяна на парола</h1>
       <Suspense>
         <Content />
       </Suspense>
@@ -24,12 +24,16 @@ async function Content() {
   return (
     <>
       {admin.mustChangePassword && (
-        <p role="alert" className="mb-4 rounded border border-amber-600 px-3 py-2 text-sm dark:border-amber-500">
-          Влизате с временна парола. Преди да продължите, трябва да зададете своя парола.
+        <p
+          role="alert"
+          className="mb-4 rounded-sm border border-line-ember bg-ember-900 px-3 py-2 text-sm text-ember-300"
+        >
+          Влизате с временна парола. Преди да продължите, трябва да зададете
+          своя парола.
         </p>
       )}
       <ChangePasswordForm />
-      <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="mt-4 text-sm text-secondary">
         {PASSWORD_RULES_TEXT} След смяната останалите ви сесии се прекратяват.
       </p>
     </>

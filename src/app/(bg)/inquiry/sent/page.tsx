@@ -15,7 +15,9 @@ export default function InquirySentPage() {
       <PlaceholderPage
         title="Запитването е изпратено"
         phase="фаза 4"
-        waitingFor={["текстът на потвърждението след запитване (вие го одобрявате)"]}
+        waitingFor={[
+          "текстът на потвърждението след запитване (вие го одобрявате)",
+        ]}
       />
     </main>
   );

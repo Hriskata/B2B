@@ -14,7 +14,9 @@ function imageSrc(sku: string | null): string | null {
   // Only plain names: the SKU comes from the database, but it must never
   // reach the file system as a path.
   if (!SAFE_NAME.test(name)) return null;
-  return existsSync(path.join(IMAGE_DIR, `${name}.webp`)) ? `/images/products/${name}.webp` : null;
+  return existsSync(path.join(IMAGE_DIR, `${name}.webp`))
+    ? `/images/products/${name}.webp`
+    : null;
 }
 
 export function ProductImage({
@@ -34,15 +36,15 @@ export function ProductImage({
     return (
       <div
         aria-hidden
-        className={`${frame} flex items-center justify-center bg-gradient-to-br from-zinc-200 to-zinc-300 text-sm text-zinc-500 dark:from-zinc-800 dark:to-zinc-700 dark:text-zinc-400`}
+        className={`${frame} flex items-center justify-center bg-raised text-sm text-muted`}
       >
         <span>Снимка</span>
       </div>
     );
   }
-  // The renders are on a white background, so the frame is white in both themes.
+  // The renders are opaque on a white background, so they sit in a light, rounded tile.
   return (
-    <div className={`${frame} bg-white`}>
+    <div className={`${frame} image-tile`}>
       <Image
         src={src}
         alt={alt}

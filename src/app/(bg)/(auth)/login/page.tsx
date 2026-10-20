@@ -12,7 +12,7 @@ const NOTICES: Record<string, string> = {
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 py-12">
-      <h1 className="mb-6 text-2xl font-semibold">Вход</h1>
+      <h1 className="mb-6">Вход</h1>
       <Suspense>
         <Form searchParams={searchParams} />
       </Suspense>
@@ -20,7 +20,11 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
   );
 }
 
-async function Form({ searchParams }: { searchParams: PageProps<"/login">["searchParams"] }) {
+async function Form({
+  searchParams,
+}: {
+  searchParams: PageProps<"/login">["searchParams"];
+}) {
   const { notice } = await searchParams;
   const text = typeof notice === "string" ? NOTICES[notice] : undefined;
   return <LoginForm notice={text} />;

@@ -15,14 +15,21 @@ const PricesContext = createContext<State>({ status: "loading" });
 
 // Prices are never part of the page HTML. After the page is shown, this asks
 // the private, uncached /api/prices endpoint; a guest gets 401 and no price.
-export function PricesProvider({ slugs, children }: { slugs: string[]; children: React.ReactNode }) {
+export function PricesProvider({
+  slugs,
+  children,
+}: {
+  slugs: string[];
+  children: React.ReactNode;
+}) {
   const [state, setState] = useState<State>({ status: "loading" });
   const key = slugs.join(",");
 
   useEffect(() => {
     const controller = new AbortController();
     const query = new URLSearchParams();
-    for (const slug of key.split(",").filter(Boolean)) query.append("slug", slug);
+    for (const slug of key.split(",").filter(Boolean))
+      query.append("slug", slug);
 
     fetch(`/api/prices?${query}`, {
       cache: "no-store",
@@ -46,7 +53,15 @@ export function PricesProvider({ slugs, children }: { slugs: string[]; children:
   return <PricesContext value={state}>{children}</PricesContext>;
 }
 
-export function Price({ slug, lang, className }: { slug: string; lang: Lang; className?: string }) {
+export function Price({
+  slug,
+  lang,
+  className,
+}: {
+  slug: string;
+  lang: Lang;
+  className?: string;
+}) {
   const state = useContext(PricesContext);
   const t = getDict(lang).price;
 
@@ -67,13 +82,13 @@ export function Price({ slug, lang, className }: { slug: string; lang: Lang; cla
   return (
     <p className={className} aria-live="polite">
       {state.status === "loading" ? (
-        <span className="text-zinc-500">{t.loading}</span>
+        <span className="text-muted">{t.loading}</span>
       ) : price ? (
         <>
           {t.perUnit} <strong>{price.formatted}</strong>
         </>
       ) : (
-        <span className="text-zinc-500">{t.negotiable}</span>
+        <span className="text-secondary">{t.negotiable}</span>
       )}
     </p>
   );

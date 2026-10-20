@@ -18,7 +18,13 @@ export function RegisterForm({ siteKey }: { siteKey: string }) {
   return (
     <form action={action} className="flex flex-col gap-4" noValidate>
       <FormMessage state={state} />
-      <Field name="companyName" label="Име на фирмата" autoComplete="organization" state={state} maxLength={200} />
+      <Field
+        name="companyName"
+        label="Име на фирмата"
+        autoComplete="organization"
+        state={state}
+        maxLength={200}
+      />
       <Field
         name="eik"
         label="ЕИК"
@@ -27,7 +33,14 @@ export function RegisterForm({ siteKey }: { siteKey: string }) {
         state={state}
         maxLength={13}
       />
-      <Field name="email" label="Имейл" type="email" autoComplete="email" state={state} maxLength={254} />
+      <Field
+        name="email"
+        label="Имейл"
+        type="email"
+        autoComplete="email"
+        state={state}
+        maxLength={254}
+      />
       <Field
         name="password"
         label="Парола"

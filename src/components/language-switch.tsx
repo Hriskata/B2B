@@ -15,7 +15,7 @@ export function LanguageSwitch({ lang }: { lang: Lang }) {
       lang={target}
       hrefLang={target}
       aria-label={t.ariaLabel}
-      className="text-sm underline"
+      className="t-small"
     >
       {t.label}
     </Link>

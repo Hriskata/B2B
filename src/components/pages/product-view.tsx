@@ -14,7 +14,10 @@ import { breadcrumbJsonLd, productJsonLd, serializeJsonLd } from "@/lib/seo";
 
 type Params = Promise<{ slug: string }>;
 
-export async function productMetadata(lang: Lang, params: Params): Promise<Metadata> {
+export async function productMetadata(
+  lang: Lang,
+  params: Params,
+): Promise<Metadata> {
   const { slug } = await params;
   const product = await getPublicProduct(slug);
   if (!product) return { title: getDict(lang).product.notFoundTitle };
@@ -37,35 +40,45 @@ export async function productMetadata(lang: Lang, params: Params): Promise<Metad
   };
 }
 
-export async function ProductView({ lang, params }: { lang: Lang; params: Params }) {
+export async function ProductView({
+  lang,
+  params,
+}: {
+  lang: Lang;
+  params: Params;
+}) {
   const { slug } = await params;
   const product = await getPublicProduct(slug);
   if (!product) notFound();
   const t = getDict(lang);
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-12">
+    <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 py-8 sm:py-12">
       <Link href={localePath(lang, "/products")} className="text-sm underline">
         {t.product.back}
       </Link>
       <article className="mt-6 grid gap-6 md:grid-cols-2 md:gap-10">
-        <ProductImage sku={product.sku} alt={product.name} priority className="rounded-lg" />
+        <ProductImage sku={product.sku} alt={product.name} priority />
         <div className="flex flex-col gap-4">
-          <h1 className="text-3xl font-semibold">{product.name}</h1>
-          <p className="whitespace-pre-line text-zinc-700 dark:text-zinc-300">
+          <h1 className="text-primary">{product.name}</h1>
+          <p className="whitespace-pre-line text-secondary">
             {productDescription(product, lang)}
           </p>
           <ProductSpecs product={product} lang={lang} />
           <PricesProvider slugs={[product.slug]}>
-            <div className="rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
-              <Price slug={product.slug} lang={lang} className="text-lg" />
-              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{t.price.note}</p>
+            <div className="card card-pad card-highlight">
+              <Price
+                slug={product.slug}
+                lang={lang}
+                className="text-lg [&_strong]:text-3xl [&_strong]:font-medium [&_strong]:tracking-tight [&_strong]:text-primary"
+              />
+              <p className="mt-2 text-sm text-secondary">{t.price.note}</p>
             </div>
           </PricesProvider>
           {/* The form itself is phase 4; until then /inquiry is an empty placeholder (Bulgarian only). */}
           <Link
             href={`/inquiry?product=${encodeURIComponent(product.slug)}`}
-            className="w-fit rounded bg-zinc-900 px-5 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+            className="btn btn-primary w-fit"
           >
             {t.product.inquiry}
           </Link>
@@ -77,7 +90,10 @@ export async function ProductView({ lang, params }: { lang: Lang; params: Params
             __html: serializeJsonLd(
               breadcrumbJsonLd([
                 { name: t.header.products, url: pageUrl(lang, "/products") },
-                { name: product.name, url: pageUrl(lang, `/products/${product.slug}`) },
+                {
+                  name: product.name,
+                  url: pageUrl(lang, `/products/${product.slug}`),
+                },
               ]),
             ),
           }}
@@ -87,7 +103,11 @@ export async function ProductView({ lang, params }: { lang: Lang; params: Params
           dangerouslySetInnerHTML={{
             __html: serializeJsonLd(
               productJsonLd(
-                { slug: product.slug, name: product.name, description: productDescription(product, lang) },
+                {
+                  slug: product.slug,
+                  name: product.name,
+                  description: productDescription(product, lang),
+                },
                 getEnv().APP_URL,
                 lang,
               ),

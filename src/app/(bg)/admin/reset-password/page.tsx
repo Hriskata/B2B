@@ -5,12 +5,17 @@ import { isEmailTokenUsable } from "@/lib/auth/tokens";
 import { ResetPasswordForm } from "../../(auth)/reset-password/reset-form";
 import { adminResetPasswordAction } from "../actions";
 
-export const metadata: Metadata = { title: "Нова парола (админ)", referrer: "no-referrer" };
+export const metadata: Metadata = {
+  title: "Нова парола (админ)",
+  referrer: "no-referrer",
+};
 
-export default function AdminResetPasswordPage({ searchParams }: PageProps<"/admin/reset-password">) {
+export default function AdminResetPasswordPage({
+  searchParams,
+}: PageProps<"/admin/reset-password">) {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 py-12">
-      <h1 className="mb-6 text-2xl font-semibold">Нова парола</h1>
+      <h1 className="mb-6">Нова парола</h1>
       <Suspense>
         <Content searchParams={searchParams} />
       </Suspense>

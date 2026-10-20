@@ -9,8 +9,8 @@ export const metadata: Metadata = { title: "Администрация" };
 
 export default function AdminHomePage() {
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-      <h1 className="mb-6 text-2xl font-semibold">Администрация</h1>
+    <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 py-8">
+      <h1 className="mb-6">Администрация</h1>
       <Suspense>
         <Content />
       </Suspense>
@@ -25,8 +25,12 @@ async function Content() {
   return (
     <div className="flex flex-col gap-4">
       {getEnv().ADMIN_2FA_DISABLED && (
-        <p role="alert" className="rounded border border-red-700 px-3 py-2 text-red-700 dark:text-red-400">
-          Внимание: двуфакторната автентикация е изключена (само за локално тестване).
+        <p
+          role="alert"
+          className="rounded-sm border border-line-ember bg-ember-900 px-3 py-2 text-ember-300"
+        >
+          Внимание: двуфакторната автентикация е изключена (само за локално
+          тестване).
         </p>
       )}
       <p>
@@ -46,7 +50,7 @@ async function Content() {
           <li key={href}>
             <Link
               href={href}
-              className="block rounded-lg border border-zinc-300 p-4 font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+              className="card card-pad card-interactive block font-medium text-primary"
             >
               {label}
             </Link>

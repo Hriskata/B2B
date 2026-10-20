@@ -8,7 +8,13 @@ import { PASSWORD_RULES_TEXT } from "@/lib/password-policy";
 type Action = (prev: FormState, formData: FormData) => Promise<FormState>;
 
 // Shared by the customer and the admin "set new password" pages.
-export function ResetPasswordForm({ action, token }: { action: Action; token: string }) {
+export function ResetPasswordForm({
+  action,
+  token,
+}: {
+  action: Action;
+  token: string;
+}) {
   const [state, formAction] = useActionState(action, initialFormState);
   return (
     <form action={formAction} className="flex flex-col gap-4" noValidate>

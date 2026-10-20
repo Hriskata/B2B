@@ -7,7 +7,9 @@ export function generateStaticParams() {
   return SERIES_KEYS.map((key) => ({ key }));
 }
 
-export function generateMetadata({ params }: PageProps<"/en/series/[key]">): Promise<Metadata> {
+export function generateMetadata({
+  params,
+}: PageProps<"/en/series/[key]">): Promise<Metadata> {
   return seriesMetadata("en", params);
 }
 

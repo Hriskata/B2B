@@ -21,7 +21,10 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   );
 }
 
-const ROLE_LABEL = { viewer: "само преглед", editor: "преглед и редакция" } as const;
+const ROLE_LABEL = {
+  viewer: "само преглед",
+  editor: "преглед и редакция",
+} as const;
 
 // Shown only with a complete session (after 2FA), so the login and 2FA
 // pages stay clean.
@@ -29,12 +32,12 @@ async function AdminNav() {
   const admin = await getCurrentAdmin("full");
   if (!admin) return null;
   return (
-    <div className="border-b border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+    <div className="border-b border-line bg-section">
       <nav
         aria-label="Администрация"
-        className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2 text-sm"
+        className="mx-auto flex w-full max-w-[1120px] flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2 text-sm"
       >
-        <Link href="/admin" className="font-semibold">
+        <Link href="/admin" className="font-medium">
           Администрация
         </Link>
         <Link href="/admin/products" className="underline">
@@ -58,7 +61,7 @@ async function AdminNav() {
         <Link href="/admin/change-password" className="ml-auto underline">
           Смяна на парола
         </Link>
-        <span className="text-zinc-600 dark:text-zinc-400">
+        <span className="text-secondary">
           {admin.email} ({ROLE_LABEL[admin.role]})
         </span>
         <form action={adminLogoutAction}>

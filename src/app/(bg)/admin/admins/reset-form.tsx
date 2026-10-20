@@ -7,19 +7,41 @@ import { resetAdminTwoFactorAction } from "../manage-actions";
 
 // Asks the acting admin to prove themselves again: their own password and a
 // current 2FA code.
-export function ResetTwoFactorForm({ targetId, targetEmail }: { targetId: string; targetEmail: string }) {
-  const [state, action] = useActionState(resetAdminTwoFactorAction, initialFormState);
+export function ResetTwoFactorForm({
+  targetId,
+  targetEmail,
+}: {
+  targetId: string;
+  targetEmail: string;
+}) {
+  const [state, action] = useActionState(
+    resetAdminTwoFactorAction,
+    initialFormState,
+  );
   return (
     <details className="mt-3">
-      <summary className="cursor-pointer text-sm underline">Нулирай 2FA на този админ</summary>
-      <form action={action} className="mt-3 flex max-w-sm flex-col gap-3" noValidate>
+      <summary className="cursor-pointer text-sm underline">
+        Нулирай 2FA на този админ
+      </summary>
+      <form
+        action={action}
+        className="mt-3 flex max-w-sm flex-col gap-3"
+        noValidate
+      >
         <input type="hidden" name="targetId" value={targetId} />
         <p className="text-sm">
-          {targetEmail} ще загуби всички сесии, ще получи имейл и ще трябва да настрои 2FA отново.
-          Потвърдете, че сте вие:
+          {targetEmail} ще загуби всички сесии, ще получи имейл и ще трябва да
+          настрои 2FA отново. Потвърдете, че сте вие:
         </p>
         <FormMessage state={state} />
-        <Field name="password" label="Вашата парола" type="password" autoComplete="current-password" state={state} maxLength={128} />
+        <Field
+          name="password"
+          label="Вашата парола"
+          type="password"
+          autoComplete="current-password"
+          state={state}
+          maxLength={128}
+        />
         <Field
           name="code"
           label="Вашият код за 2FA"

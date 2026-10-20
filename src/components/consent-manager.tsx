@@ -71,7 +71,13 @@ function unloadAnalytics(id: string | null) {
 
 // Banner + loader. Analytics starts only after "accept" (or a stored accept)
 // and stops when the choice changes to "refuse".
-export function ConsentManager({ measurementId, lang }: { measurementId: string | null; lang: Lang }) {
+export function ConsentManager({
+  measurementId,
+  lang,
+}: {
+  measurementId: string | null;
+  lang: Lang;
+}) {
   const t = getDict(lang).consent;
   const [choice, setChoice] = useState<ConsentChoice | null>(null);
   const [ready, setReady] = useState(false);
@@ -89,7 +95,8 @@ export function ConsentManager({ measurementId, lang }: { measurementId: string 
 
   useEffect(() => {
     if (!ready) return;
-    if (shouldLoadAnalytics(choice, measurementId)) loadAnalytics(measurementId!);
+    if (shouldLoadAnalytics(choice, measurementId))
+      loadAnalytics(measurementId!);
     else unloadAnalytics(measurementId);
   }, [ready, choice, measurementId]);
 
@@ -105,9 +112,9 @@ export function ConsentManager({ measurementId, lang }: { measurementId: string 
     <div
       role="region"
       aria-label={t.region}
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-400 bg-background p-4 shadow-lg"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-section p-4"
     >
-      <div className="mx-auto flex max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto flex max-w-[1120px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm">
           {t.text}{" "}
           <Link href={localePath(lang, "/cookies")} className="underline">
@@ -118,14 +125,14 @@ export function ConsentManager({ measurementId, lang }: { measurementId: string 
           <button
             type="button"
             onClick={() => decide("denied")}
-            className="rounded border border-foreground px-4 py-2 font-medium"
+            className="btn btn-secondary"
           >
             {t.refuse}
           </button>
           <button
             type="button"
             onClick={() => decide("granted")}
-            className="rounded border border-foreground bg-foreground px-4 py-2 font-medium text-background"
+            className="btn btn-secondary"
           >
             {t.accept}
           </button>
@@ -138,7 +145,11 @@ export function ConsentManager({ measurementId, lang }: { measurementId: string 
 // Footer link that lets the visitor change the decision at any time.
 export function CookieSettingsButton({ label }: { label: string }) {
   return (
-    <button type="button" className="underline" onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))}>
+    <button
+      type="button"
+      className="text-secondary transition-colors hover:text-ember-300"
+      onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))}
+    >
       {label}
     </button>
   );

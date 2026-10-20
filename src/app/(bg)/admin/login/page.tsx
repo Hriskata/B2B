@@ -5,10 +5,12 @@ import { AdminLoginForm } from "./admin-login-form";
 
 export const metadata: Metadata = { title: "Вход за администратори" };
 
-export default function AdminLoginPage({ searchParams }: PageProps<"/admin/login">) {
+export default function AdminLoginPage({
+  searchParams,
+}: PageProps<"/admin/login">) {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 py-12">
-      <h1 className="mb-6 text-2xl font-semibold">Вход за администратори</h1>
+      <h1 className="mb-6">Вход за администратори</h1>
       <Suspense>
         <Form searchParams={searchParams} />
       </Suspense>
@@ -29,7 +31,11 @@ async function Form({
   const { notice } = await searchParams;
   return (
     <AdminLoginForm
-      notice={notice === "password-reset" ? "Паролата е сменена. Влезте с новата парола." : undefined}
+      notice={
+        notice === "password-reset"
+          ? "Паролата е сменена. Влезте с новата парола."
+          : undefined
+      }
     />
   );
 }

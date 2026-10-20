@@ -5,7 +5,12 @@ import { buildMetadata } from "@/lib/page-meta";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = getDict("bg").home;
-  return buildMetadata({ lang: "bg", path: "/", title: t.metaTitle, description: t.metaDescription });
+  return buildMetadata({
+    lang: "bg",
+    path: "/",
+    title: t.metaTitle,
+    description: t.metaDescription,
+  });
 }
 
 export default function Page() {

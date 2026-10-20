@@ -1,25 +1,437 @@
 @import "tailwindcss";
 
+/* Ember Glow (docs/ember-glow-style.md): a warm near-black surface, ONE accent
+   (red #D7000F) used as light, borders instead of shadows, quiet typography.
+   The site is dark only. */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surfaces, lowest to highest */
+  --bg-base: #0a0604;
+  --bg-section: #120b07;
+  --surface-card: #1a110c;
+  --surface-raised: #24170f;
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-ember: rgba(215, 0, 15, 0.6);
+
+  /* Accent */
+  --ember-300: #ff5c66;
+  --ember-500: #d7000f;
+  --ember-600: #a3000b;
+  --ember-900: #3a0306;
+
+  /* Text */
+  --text-primary: #f6f1ec;
+  --text-secondary: #a39a93;
+  --text-muted: #7a706a; /* short, non-critical text only */
+  --text-on-ember: #ffffff;
+  --surface-light: #ffffff; /* only behind the opaque white product renders */
+
+  /* Radii */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-24: 96px;
+
+  /* Light */
+  --glow-sm: 0 0 24px rgba(215, 0, 15, 0.45);
+  --glow-lg: 0 0 80px rgba(215, 0, 15, 0.5);
+  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --ember-glow: radial-gradient(
+    ellipse at 50% 100%,
+    var(--ember-300) 0%,
+    var(--ember-500) 18%,
+    var(--ember-600) 32%,
+    var(--ember-900) 55%,
+    transparent 75%
+  );
+
+  color-scheme: dark;
 }
 
+/* Tailwind utilities for the tokens: bg-base, bg-section, bg-card, bg-raised,
+   text-primary/secondary/muted, border-line, border-line-ember, text-ember-300 ... */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --color-background: var(--bg-base);
+  --color-foreground: var(--text-primary);
+  --color-base: var(--bg-base);
+  --color-section: var(--bg-section);
+  --color-card: var(--surface-card);
+  --color-raised: var(--surface-raised);
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-muted: var(--text-muted);
+  --color-line: var(--border-subtle);
+  --color-line-ember: var(--border-ember);
+  --color-ember-300: var(--ember-300);
+  --color-ember-500: var(--ember-500);
+  --color-ember-600: var(--ember-600);
+  --color-ember-900: var(--ember-900);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-glow-sm: var(--glow-sm);
+  --shadow-glow-lg: var(--glow-lg);
+  --shadow-inner-highlight: var(--inner-highlight);
+  --font-sans: var(--font-inter), "Inter", "SF Pro Display", system-ui, -apple-system, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    background: var(--bg-base);
+  }
+
+  body {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font: 400 15px/1.6 var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Headings: quiet, large, weight 400 */
+  h1 {
+    font-size: clamp(2rem, 1.2rem + 3.4vw, 2.75rem);
+    line-height: 1.1;
+    font-weight: 400;
+    letter-spacing: -0.025em;
+  }
+  h2 {
+    font-size: clamp(1.5rem, 1.1rem + 1.4vw, 1.75rem);
+    line-height: 1.2;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+  h3 {
+    font-size: 1.25rem;
+    line-height: 1.25;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  /* Links: secondary text, ember on hover */
+  a {
+    color: var(--text-secondary);
+    transition: color 200ms;
+  }
+  a:hover {
+    color: var(--ember-300);
+  }
+
+  /* A visible focus for every interactive element (inputs add a glow too) */
+  :focus-visible {
+    outline: 2px solid var(--ember-300);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--ember-600);
+    color: var(--text-on-ember);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
+@layer components {
+  /* --- Type scale --- */
+  .t-display-xl {
+    font-size: clamp(2.5rem, 1.4rem + 4.6vw, 4rem);
+    line-height: 1.05;
+    font-weight: 400;
+    letter-spacing: -0.03em;
+  }
+  .t-display-l {
+    font-size: clamp(2rem, 1.2rem + 3.4vw, 2.75rem);
+    line-height: 1.1;
+    font-weight: 400;
+    letter-spacing: -0.025em;
+  }
+  .t-heading {
+    font-size: 1.75rem;
+    line-height: 1.2;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+  .t-card-title {
+    font-size: 1.25rem;
+    line-height: 1.25;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .t-small {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .t-label {
+    font-size: 12px;
+    line-height: 1;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .t-price {
+    font-size: 2rem;
+    line-height: 1;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  /* --- Buttons: always pills --- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    border-radius: var(--radius-pill);
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    cursor: pointer;
+    transition:
+      box-shadow 200ms,
+      background-color 200ms,
+      border-color 200ms,
+      opacity 200ms;
+  }
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  .btn-primary {
+    background: linear-gradient(180deg, var(--ember-500), var(--ember-600));
+    color: var(--text-on-ember);
+    box-shadow:
+      var(--glow-sm),
+      var(--inner-highlight);
+  }
+  .btn-primary:hover:not(:disabled) {
+    color: var(--text-on-ember);
+    box-shadow:
+      0 0 36px rgba(215, 0, 15, 0.7),
+      var(--inner-highlight);
+  }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--surface-raised);
+    color: var(--text-primary);
+  }
+
+  /* --- Pill label / badge --- */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--text-secondary);
+  }
+  a.pill:hover {
+    background: var(--surface-raised);
+    color: var(--text-primary);
+  }
+  .badge-ember {
+    display: inline-flex;
+    border-radius: var(--radius-pill);
+    background: var(--ember-900);
+    color: var(--ember-300);
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  /* --- Cards: a border and a light top edge, never a drop shadow --- */
+  .card {
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--inner-highlight);
+    transition:
+      background-color 200ms,
+      border-color 200ms;
+  }
+  .card-pad {
+    padding: var(--space-6);
+  }
+  .card-sm {
+    border-radius: var(--radius-md);
+  }
+  .card-interactive:hover {
+    background: var(--surface-raised);
+    border-color: var(--border-ember);
+  }
+  /* The highlighted card (a chosen or recommended item) */
+  .card-highlight {
+    border-color: var(--border-ember);
+    box-shadow:
+      var(--glow-lg),
+      var(--inner-highlight);
+  }
+
+  /* --- Panels (hero, CTA, footer) --- */
+  .panel {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-section);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--inner-highlight);
+  }
+  .panel > * {
+    position: relative;
+    z-index: 1;
+  }
+  /* The ember glow along the bottom edge: a CSS gradient, no image */
+  .panel-glow::before {
+    content: "";
+    position: absolute;
+    inset: auto 0 -40% 0;
+    height: 80%;
+    background: var(--ember-glow);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* --- Inputs --- */
+  .input {
+    width: 100%;
+    background: var(--surface-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    color: var(--text-primary);
+    transition:
+      border-color 200ms,
+      box-shadow 200ms;
+  }
+  .input::placeholder {
+    color: var(--text-muted);
+  }
+  .input:focus,
+  .input:focus-visible {
+    outline: 2px solid transparent;
+    border-color: var(--border-ember);
+    box-shadow: var(--glow-sm);
+  }
+  .input:disabled {
+    opacity: 0.6;
+  }
+  .input[aria-invalid="true"] {
+    border-color: var(--ember-300);
+  }
+
+  /* --- FAQ accordion row --- */
+  .faq-row {
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-6);
+    transition:
+      border-color 200ms,
+      box-shadow 200ms;
+  }
+  .faq-row[open] {
+    border-color: var(--border-ember);
+    box-shadow: var(--glow-lg);
+  }
+  .faq-row > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    cursor: pointer;
+    font-weight: 500;
+    list-style: none;
+  }
+  .faq-row > summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq-row > summary::after {
+    content: "";
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-right: 1.5px solid var(--text-secondary);
+    border-bottom: 1.5px solid var(--text-secondary);
+    transform: rotate(45deg);
+    transition: transform 200ms;
+  }
+  .faq-row[open] > summary::after {
+    transform: rotate(-135deg);
+  }
+
+  /* --- For icons and logos, when the site gets them ---
+     An icon sits in a raised tile (or a circle) with the ember glow behind it.
+     Use: <span class="icon-glow"><svg stroke-width="1.5" .../></span> */
+  .icon-glow {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    overflow: hidden;
+    background: var(--surface-raised);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+  }
+  .icon-glow-round {
+    border-radius: var(--radius-pill);
+  }
+  .icon-glow::before {
+    content: "";
+    position: absolute;
+    inset: auto 0 -50% 0;
+    height: 80%;
+    background: var(--ember-glow);
+    opacity: 0.8;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .icon-glow > * {
+    position: relative;
+    z-index: 1;
+  }
+  .icon-glow svg {
+    stroke-width: 1.5;
+  }
+  /* One row of monochrome logos under the hero */
+  .logo-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-8);
+    color: var(--text-muted);
+    filter: grayscale(1);
+  }
+
+  /* Product renders are opaque on a white background: a light, rounded tile */
+  .image-tile {
+    background: var(--surface-light);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+  }
 }

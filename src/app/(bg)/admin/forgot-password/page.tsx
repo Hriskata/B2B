@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Забравена парола (а�
 export default function AdminForgotPasswordPage() {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 py-12">
-      <h1 className="mb-6 text-2xl font-semibold">Забравена парола</h1>
+      <h1 className="mb-6">Забравена парола</h1>
       <Suspense>
         <Form />
       </Suspense>

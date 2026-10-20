@@ -12,10 +12,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function ResetPasswordPage({ searchParams }: PageProps<"/reset-password">) {
+export default function ResetPasswordPage({
+  searchParams,
+}: PageProps<"/reset-password">) {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 py-12">
-      <h1 className="mb-6 text-2xl font-semibold">Нова парола</h1>
+      <h1 className="mb-6">Нова парола</h1>
       <Suspense>
         <Content searchParams={searchParams} />
       </Suspense>

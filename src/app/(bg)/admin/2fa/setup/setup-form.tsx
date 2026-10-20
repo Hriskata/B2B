@@ -33,10 +33,10 @@ export function SetupForm({
       <div className="flex flex-col gap-4">
         <FormMessage state={state} />
         <p className="font-medium">
-          Запазете тези кодове за възстановяване на сигурно място. Всеки важи само веднъж и
-          повече няма да бъдат показани.
+          Запазете тези кодове за възстановяване на сигурно място. Всеки важи
+          само веднъж и повече няма да бъдат показани.
         </p>
-        <ul className="grid grid-cols-1 gap-1 rounded border border-zinc-400 p-3 font-mono">
+        <ul className="grid grid-cols-1 gap-1 rounded-sm border border-line bg-card p-3 font-mono">
           {state.recoveryCodes.map((code) => (
             <li key={code}>{code}</li>
           ))}
@@ -51,14 +51,20 @@ export function SetupForm({
   return (
     <form action={action} className="flex flex-col gap-4" noValidate>
       <p>
-        Двуфакторната автентикация е задължителна за администраторите. Сканирайте кода с
-        приложение за автентикация (например Google Authenticator или Aegis), после въведете
-        показания 6-цифрен код.
+        Двуфакторната автентикация е задължителна за администраторите.
+        Сканирайте кода с приложение за автентикация (например Google
+        Authenticator или Aegis), после въведете показания 6-цифрен код.
       </p>
       {/* eslint-disable-next-line @next/next/no-img-element -- data: URL, nothing to optimise */}
-      <img src={qrDataUrl} alt="QR код за приложението за автентикация" width={220} height={220} />
+      <img
+        src={qrDataUrl}
+        alt="QR код за приложението за автентикация"
+        width={220}
+        height={220}
+      />
       <p className="text-sm">
-        Или въведете ключа ръчно: <span className="font-mono break-all">{secret}</span>
+        Или въведете ключа ръчно:{" "}
+        <span className="font-mono break-all">{secret}</span>
       </p>
       <FormMessage state={state} />
       <Field

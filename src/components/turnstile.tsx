@@ -4,7 +4,10 @@ import Script from "next/script";
 import { useEffect, useRef } from "react";
 
 type TurnstileApi = {
-  render: (el: HTMLElement, options: { sitekey: string; language?: string }) => string;
+  render: (
+    el: HTMLElement,
+    options: { sitekey: string; language?: string },
+  ) => string;
   reset: (id: string) => void;
   remove: (id: string) => void;
 };
@@ -19,7 +22,13 @@ declare global {
 // field to the surrounding form, which the Server Action verifies.
 // Tokens are single use, so `resetKey` (the form nonce) resets the widget
 // after every submit.
-export function Turnstile({ siteKey, resetKey }: { siteKey: string; resetKey: number }) {
+export function Turnstile({
+  siteKey,
+  resetKey,
+}: {
+  siteKey: string;
+  resetKey: number;
+}) {
   const container = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | undefined>(undefined);
 
@@ -53,7 +62,8 @@ export function Turnstile({ siteKey, resetKey }: { siteKey: string; resetKey: nu
   }, [siteKey]);
 
   useEffect(() => {
-    if (widgetId.current && window.turnstile) window.turnstile.reset(widgetId.current);
+    if (widgetId.current && window.turnstile)
+      window.turnstile.reset(widgetId.current);
   }, [resetKey]);
 
   return (

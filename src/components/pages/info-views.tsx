@@ -11,11 +11,14 @@ export function AboutView({ lang }: { lang: Lang }) {
   const t = getDict(lang).about;
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:py-12">
-      <h1 className="text-3xl font-semibold">{t.title}</h1>
-      <p role="note" className="mt-4 rounded border border-dashed border-amber-600 px-3 py-2 text-sm dark:border-amber-500">
+      <h1>{t.title}</h1>
+      <p
+        role="note"
+        className="mt-4 rounded-sm border border-dashed border-line-ember px-3 py-2 text-sm text-secondary"
+      >
         {t.draft}
       </p>
-      <div className="mt-6 flex flex-col gap-4 text-lg text-zinc-700 dark:text-zinc-300">
+      <div className="mt-6 flex flex-col gap-4 text-lg text-secondary">
         {t.paragraphs.map((p) => (
           <p key={p}>{p}</p>
         ))}
@@ -35,25 +38,27 @@ export function ContactsView({ lang }: { lang: Lang }) {
   ];
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:py-12">
-      <h1 className="text-3xl font-semibold">{t.title}</h1>
+      <h1>{t.title}</h1>
       <dl className="mt-6 grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-[10rem_1fr]">
         {rows.map(([label, value]) => (
           <div key={label} className="contents">
             <dt className="font-medium">{label}</dt>
-            <dd className={value ? "" : "font-semibold text-amber-700 dark:text-amber-400"}>
+            <dd className={value ? "" : "font-medium text-ember-300"}>
               {value ?? t.pending}
             </dd>
           </div>
         ))}
       </dl>
-      <p className="mt-8 text-zinc-700 dark:text-zinc-300">{t.note}</p>
+      <p className="mt-8 text-secondary">{t.note}</p>
     </main>
   );
 }
 
 export function FaqView({ lang }: { lang: Lang }) {
   const t = getDict(lang).faq;
-  const pending = <span className="font-semibold text-amber-700 dark:text-amber-400">{t.pending}</span>;
+  const pending = (
+    <span className="font-medium text-ember-300">{t.pending}</span>
+  );
   // Sign-in related pages exist only in Bulgarian for now.
   const questions: { q: string; a: React.ReactNode }[] = [
     { q: t.items.who[0], a: t.items.who[1] },
@@ -78,15 +83,18 @@ export function FaqView({ lang }: { lang: Lang }) {
   ];
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:py-12">
-      <h1 className="text-3xl font-semibold">{t.title}</h1>
-      <p role="note" className="mt-4 rounded border border-dashed border-amber-600 px-3 py-2 text-sm dark:border-amber-500">
+      <h1>{t.title}</h1>
+      <p
+        role="note"
+        className="mt-4 rounded-sm border border-dashed border-line-ember px-3 py-2 text-sm text-secondary"
+      >
         {t.draft}
       </p>
-      <div className="mt-6 divide-y divide-zinc-300 border-y border-zinc-300 dark:divide-zinc-700 dark:border-zinc-700">
+      <div className="mt-6 flex flex-col gap-3">
         {questions.map(({ q, a }) => (
-          <details key={q} className="group py-3">
-            <summary className="cursor-pointer font-medium">{q}</summary>
-            <div className="mt-2 text-zinc-700 dark:text-zinc-300">{a}</div>
+          <details key={q} className="faq-row">
+            <summary>{q}</summary>
+            <div className="mt-3 text-secondary">{a}</div>
           </details>
         ))}
       </div>
@@ -109,14 +117,17 @@ export function CookiesView({ lang }: { lang: Lang }) {
   return (
     <PendingLegal lang={lang} title={t.cookies}>
       <section className="mt-8">
-        <h2 className="text-xl font-semibold">{t.cookiesHeading}</h2>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{t.cookiesNote}</p>
+        <h2>{t.cookiesHeading}</h2>
+        <p className="mt-2 text-sm text-secondary">{t.cookiesNote}</p>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[34rem] border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-zinc-400">
+              <tr className="border-b border-line">
                 {t.cols.map((c, i) => (
-                  <th key={c} className={i === t.cols.length - 1 ? "py-2" : "py-2 pr-3"}>
+                  <th
+                    key={c}
+                    className={i === t.cols.length - 1 ? "py-2" : "py-2 pr-3"}
+                  >
                     {c}
                   </th>
                 ))}
@@ -124,10 +135,13 @@ export function CookiesView({ lang }: { lang: Lang }) {
             </thead>
             <tbody>
               {t.cookies_rows.map((row) => (
-                <tr key={row[0]} className="border-b border-zinc-200 align-top dark:border-zinc-800">
+                <tr key={row[0]} className="border-b border-line align-top">
                   <td className="py-2 pr-3 font-mono">{row[0]}</td>
                   {row.slice(1).map((cell, i) => (
-                    <td key={i} className={i === row.length - 2 ? "py-2" : "py-2 pr-3"}>
+                    <td
+                      key={i}
+                      className={i === row.length - 2 ? "py-2" : "py-2 pr-3"}
+                    >
                       {cell}
                     </td>
                   ))}

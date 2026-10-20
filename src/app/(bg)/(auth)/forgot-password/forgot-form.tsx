@@ -27,7 +27,14 @@ export function ForgotPasswordForm({
   return (
     <form action={formAction} className="flex flex-col gap-4" noValidate>
       <FormMessage state={state} />
-      <Field name="email" label="Имейл" type="email" autoComplete="email" state={state} maxLength={254} />
+      <Field
+        name="email"
+        label="Имейл"
+        type="email"
+        autoComplete="email"
+        state={state}
+        maxLength={254}
+      />
       <Turnstile siteKey={siteKey} resetKey={state.nonce} />
       <SubmitButton>Изпрати връзка</SubmitButton>
       <p className="text-sm">

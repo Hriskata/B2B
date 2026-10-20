@@ -9,9 +9,11 @@ import { ProductForm } from "../product-form";
 
 export const metadata: Metadata = { title: "Продукт (админ)" };
 
-export default function EditProductPage({ params }: PageProps<"/admin/products/[id]">) {
+export default function EditProductPage({
+  params,
+}: PageProps<"/admin/products/[id]">) {
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+    <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 py-8">
       <Suspense>
         <Content params={params} />
       </Suspense>
@@ -19,14 +21,18 @@ export default function EditProductPage({ params }: PageProps<"/admin/products/[
   );
 }
 
-async function Content({ params }: { params: PageProps<"/admin/products/[id]">["params"] }) {
+async function Content({
+  params,
+}: {
+  params: PageProps<"/admin/products/[id]">["params"];
+}) {
   const admin = await requireAdmin();
   const { id } = await params;
   const product = await getAdminProduct(id);
   if (!product) notFound();
   return (
     <>
-      <h1 className="mb-6 text-2xl font-semibold">{product.name}</h1>
+      <h1 className="mb-6">{product.name}</h1>
       <ProductForm
         canEdit={can(admin.role, "edit_catalog")}
         initial={{
@@ -36,7 +42,8 @@ async function Content({ params }: { params: PageProps<"/admin/products/[id]">["
           description: product.description,
           descriptionEn: product.descriptionEn ?? "",
           sortOrder: String(product.sortOrder),
-          price: product.priceCents === null ? "" : centsToInput(product.priceCents),
+          price:
+            product.priceCents === null ? "" : centsToInput(product.priceCents),
           published: product.published,
           series: product.series ?? "",
           connector: product.connector ?? "",
@@ -47,7 +54,8 @@ async function Content({ params }: { params: PageProps<"/admin/products/[id]">["
           rackUnits: product.rackUnits?.toString() ?? "",
           polish: (product.polish ?? []).join(", "),
           splice: product.splice === null ? "" : product.splice ? "1" : "0",
-          frontDoor: product.frontDoor === null ? "" : product.frontDoor ? "1" : "0",
+          frontDoor:
+            product.frontDoor === null ? "" : product.frontDoor ? "1" : "0",
         }}
       />
     </>

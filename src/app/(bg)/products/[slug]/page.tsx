@@ -7,7 +7,9 @@ import { ProductView, productMetadata } from "@/components/pages/product-view";
 // so this page is rendered per request; the product data itself is cached.
 export const instant = false;
 
-export function generateMetadata({ params }: PageProps<"/products/[slug]">): Promise<Metadata> {
+export function generateMetadata({
+  params,
+}: PageProps<"/products/[slug]">): Promise<Metadata> {
   return productMetadata("bg", params);
 }
 
