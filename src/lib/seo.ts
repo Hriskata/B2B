@@ -14,6 +14,10 @@ export function productJsonLd(product: Pick<PublicProduct, "slug" | "name" | "de
   };
 }
 
+export function organizationJsonLd(name: string, baseUrl: string) {
+  return { "@context": "https://schema.org", "@type": "Organization", name, url: baseUrl.replace(/\/$/, "") };
+}
+
 // Serialises JSON-LD for a <script type="application/ld+json"> tag. Characters
 // that could close the tag or break out of the script are escaped, so catalog
 // text can never inject markup.

@@ -17,7 +17,7 @@ const control =
 // the URL, so a filtered list can be shared as a link.
 export function CatalogFiltersForm({ filters }: { filters: CatalogFilters }) {
   return (
-    <form method="get" action="/" className="mb-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
+    <form method="get" action="/products" className="mb-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
         <label className="text-sm">
           Серия
@@ -107,7 +107,7 @@ export function CatalogFiltersForm({ filters }: { filters: CatalogFilters }) {
           Приложи
         </button>
         {hasActiveFilters(filters) && (
-          <Link href="/" className="text-sm underline">
+          <Link href="/products" className="text-sm underline">
             Изчисти
           </Link>
         )}

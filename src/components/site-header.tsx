@@ -13,6 +13,9 @@ export function SiteHeader() {
           <Link href="/" className="font-semibold">
             ODFFiber
           </Link>
+          <Link href="/products" className="text-sm underline">
+            Продукти
+          </Link>
           <Link href="/about" className="hidden text-sm underline sm:inline">
             За нас
           </Link>

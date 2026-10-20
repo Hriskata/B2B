@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatMoney } from "./money";
-import { productJsonLd, serializeJsonLd } from "./seo";
+import { organizationJsonLd, productJsonLd, serializeJsonLd } from "./seo";
 
 const product = { slug: "produkt-1", name: "Продукт 1", description: "Описание." };
 
@@ -50,5 +50,16 @@ describe("formatMoney", () => {
     expect(formatMoney(1250, "EUR")).toMatch(/^12,50\s€$/);
     expect(formatMoney(5, "EUR")).toMatch(/^0,05\s€$/);
     expect(formatMoney(123456, "EUR")).toMatch(/1\s?234,56\s€/);
+  });
+});
+
+describe("organizationJsonLd", () => {
+  it("has only a name and a URL without a trailing slash, and no price", () => {
+    expect(organizationJsonLd("ODFFiber", "https://odffiber.example/")).toEqual({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "ODFFiber",
+      url: "https://odffiber.example",
+    });
   });
 });

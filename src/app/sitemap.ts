@@ -6,7 +6,7 @@ import { SERIES } from "@/lib/series";
 
 // Public pages only, and no prices: it is built from PublicProduct. The legal
 // pages are left out until their real text exists.
-const STATIC_PATHS = ["/", "/about", "/contacts", "/faq"];
+const STATIC_PATHS = ["/", "/products", "/about", "/contacts", "/faq"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   await connection();

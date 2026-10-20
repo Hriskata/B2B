@@ -36,7 +36,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-12">
-      <Link href="/" className="text-sm underline">
+      <Link href="/products" className="text-sm underline">
         ← Към каталога
       </Link>
       <article className="mt-6 grid gap-6 md:grid-cols-2 md:gap-10">
@@ -53,6 +53,13 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
               </p>
             </div>
           </PricesProvider>
+          {/* The form itself is phase 4; until then /inquiry is an empty placeholder. */}
+          <Link
+            href={`/inquiry?product=${encodeURIComponent(product.slug)}`}
+            className="w-fit rounded bg-zinc-900 px-5 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+          >
+            Запитване за този модел
+          </Link>
         </div>
         {/* Serialised and escaped by serializeJsonLd; contains no price. */}
         <script

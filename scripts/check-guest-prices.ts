@@ -40,9 +40,12 @@ function scan(url: string, body: string) {
 }
 
 async function main() {
-  const home = await get("/");
-  if (home.res.status !== 200) throw new Error(`GET / returned ${home.res.status}`);
+  const home = await get("/products");
+  if (home.res.status !== 200) throw new Error(`GET /products returned ${home.res.status}`);
   scan(home.url, home.body);
+  const front = await get("/");
+  if (front.res.status !== 200) throw new Error(`GET / returned ${front.res.status}`);
+  scan(front.url, front.body);
 
   const links = [...new Set([...home.body.matchAll(/href="(\/products\/[a-z0-9-]+)"/g)].map((m) => m[1]))];
   if (links.length === 0) throw new Error("No product links found on the home page.");

@@ -37,7 +37,7 @@ export default async function SeriesPage({ params }: PageProps<"/series/[key]">)
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-12">
-      <Link href="/" className="text-sm underline">
+      <Link href="/products" className="text-sm underline">
         ← Към каталога
       </Link>
       <h1 className="mt-6 text-3xl font-semibold">{name}</h1>
