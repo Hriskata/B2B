@@ -1,5 +1,5 @@
 import type { PublicProduct } from "./catalog";
-import { SERIES } from "./series";
+import { SERIES_KEYS } from "./series";
 
 // Filtering and sorting of the public catalog. Pure and driven only by URL
 // query parameters, so a filtered view can be shared as a link. Unknown or
@@ -41,7 +41,7 @@ export function parseFilters(query: Query): CatalogFilters {
   const ru = posInt(first(query, "ru"));
   const splice = first(query, "splice");
   return {
-    series: oneOf(first(query, "series"), SERIES.map((s) => s.key)),
+    series: oneOf(first(query, "series"), SERIES_KEYS),
     connector: oneOf(first(query, "connector"), CONNECTORS),
     rackUnits: ru !== null && (RACK_UNITS as readonly number[]).includes(ru) ? ru : null,
     fibersMin: posInt(first(query, "fmin")),

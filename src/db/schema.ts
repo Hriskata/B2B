@@ -128,6 +128,8 @@ export const products = pgTable("products", {
   slug: text().notNull().unique(),
   name: text().notNull(),
   description: text().notNull(),
+  // English text; null = use the generated English text or the Bulgarian one.
+  descriptionEn: text("description_en"),
   published: boolean().notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
   // Technical data (phase 3B). All nullable: products created before the

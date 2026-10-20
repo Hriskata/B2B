@@ -10,6 +10,7 @@ const all: PublicProduct[] = parseProductsFile(JSON.parse(readFileSync("docs/pro
     slug: p.slug,
     name: p.name,
     description: p.description,
+    descriptionEn: null,
     sku: p.sku,
     series: p.series,
     connector: p.connector,

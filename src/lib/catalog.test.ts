@@ -36,7 +36,7 @@ describeDb("public catalog data", () => {
 
     // An explicit allow-list: a new column (or a price) must be added here on purpose.
     const allowed = [
-      "connector", "description", "fibers", "fibersPerRu", "frontDoor", "maxFibersVariant", "mpoPorts",
+      "connector", "description", "descriptionEn", "fibers", "fibersPerRu", "frontDoor", "maxFibersVariant", "mpoPorts",
       "name", "polish", "ports", "rackUnits", "series", "sku", "slug", "splice",
     ];
     expect(Object.keys(list[0]).sort()).toEqual(allowed);

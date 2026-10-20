@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { getDict, localePath, type Lang } from "@/i18n";
 import {
   CONSENT_COOKIE,
   CONSENT_MAX_AGE_SECONDS,
@@ -70,7 +71,8 @@ function unloadAnalytics(id: string | null) {
 
 // Banner + loader. Analytics starts only after "accept" (or a stored accept)
 // and stops when the choice changes to "refuse".
-export function ConsentManager({ measurementId }: { measurementId: string | null }) {
+export function ConsentManager({ measurementId, lang }: { measurementId: string | null; lang: Lang }) {
+  const t = getDict(lang).consent;
   const [choice, setChoice] = useState<ConsentChoice | null>(null);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
@@ -102,15 +104,14 @@ export function ConsentManager({ measurementId }: { measurementId: string | null
   return (
     <div
       role="region"
-      aria-label="Бисквитки"
+      aria-label={t.region}
       className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-400 bg-background p-4 shadow-lg"
     >
       <div className="mx-auto flex max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm">
-          Използваме бисквитки за статистика (Google Analytics) само с вашето съгласие. Необходимите
-          бисквитки за входа работят винаги.{" "}
-          <Link href="/cookies" className="underline">
-            Политика за бисквитки
+          {t.text}{" "}
+          <Link href={localePath(lang, "/cookies")} className="underline">
+            {t.policy}
           </Link>
         </p>
         <div className="flex shrink-0 gap-3">
@@ -119,14 +120,14 @@ export function ConsentManager({ measurementId }: { measurementId: string | null
             onClick={() => decide("denied")}
             className="rounded border border-foreground px-4 py-2 font-medium"
           >
-            Отказвам
+            {t.refuse}
           </button>
           <button
             type="button"
             onClick={() => decide("granted")}
             className="rounded border border-foreground bg-foreground px-4 py-2 font-medium text-background"
           >
-            Приемам
+            {t.accept}
           </button>
         </div>
       </div>
@@ -135,10 +136,10 @@ export function ConsentManager({ measurementId }: { measurementId: string | null
 }
 
 // Footer link that lets the visitor change the decision at any time.
-export function CookieSettingsButton() {
+export function CookieSettingsButton({ label }: { label: string }) {
   return (
     <button type="button" className="underline" onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))}>
-      Настройки на бисквитките
+      {label}
     </button>
   );
 }

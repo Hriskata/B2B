@@ -14,11 +14,14 @@ import { seriesName } from "@/lib/series";
 // returns nothing for a product that is missing. If the database cannot be
 // reached the request is passed on and the page decides.
 export async function proxy(request: NextRequest) {
+  // The English pages live under /en with the same structure.
+  const pathname = request.nextUrl.pathname.replace(/^\/en(?=\/)/, "");
+
   // Series: a fixed list, so no database is needed to answer 404.
-  if (request.nextUrl.pathname.startsWith("/series/")) {
+  if (pathname.startsWith("/series/")) {
     let key = "";
     try {
-      key = decodeURIComponent(request.nextUrl.pathname.split("/")[2] ?? "");
+      key = decodeURIComponent(pathname.split("/")[2] ?? "");
     } catch {
       // Broken %-sequence: not a series.
     }
@@ -29,7 +32,7 @@ export async function proxy(request: NextRequest) {
 
   let slug = "";
   try {
-    slug = decodeURIComponent(request.nextUrl.pathname.split("/")[2] ?? "");
+    slug = decodeURIComponent(pathname.split("/")[2] ?? "");
   } catch {
     // Broken %-sequence in the URL: not a product, answer 404 below.
   }
@@ -55,5 +58,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/products/:slug", "/series/:key"],
+  matcher: ["/products/:slug", "/series/:key", "/en/products/:slug", "/en/series/:key"],
 };

@@ -50,7 +50,8 @@ async function main() {
   const links = [...new Set([...home.body.matchAll(/href="(\/products\/[a-z0-9-]+)"/g)].map((m) => m[1]))];
   if (links.length === 0) throw new Error("No product links found on the home page.");
 
-  for (const link of links) {
+  // Every product page, in both languages, plus the English front pages.
+  for (const link of [...links, ...links.map((l) => `/en${l}`), "/en", "/en/products"]) {
     const page = await get(link);
     if (page.res.status !== 200) throw new Error(`GET ${link} returned ${page.res.status}`);
     scan(page.url, page.body);
@@ -62,9 +63,10 @@ async function main() {
     scan(doc.url, doc.body);
   }
   const sitemap = await get("/sitemap.xml");
-  const listed = (sitemap.body.match(/\/products\//g) ?? []).length;
+  // <loc> entries of Bulgarian product pages (English ones are under /en).
+  const listed = [...sitemap.body.matchAll(/<loc>[^<]*?(?<!\/en)\/products\/[a-z0-9-]+<\/loc>/g)].length;
   if (listed !== links.length) {
-    throw new Error(`Sitemap lists ${listed} products, the home page shows ${links.length}.`);
+    throw new Error(`Sitemap lists ${listed} products, the catalog shows ${links.length}.`);
   }
 
   // The price endpoint must refuse a guest with no price data.

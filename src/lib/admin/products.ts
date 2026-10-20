@@ -26,6 +26,8 @@ export type ProductInput = ProductSpecsInput & {
   slug: string;
   name: string;
   description: string;
+  // English text; null = none.
+  descriptionEn: string | null;
   published: boolean;
   sortOrder: number;
   // Price of one unit in euro cents, or null for "no price yet".
@@ -61,6 +63,7 @@ const selection = {
   slug: tables.products.slug,
   name: tables.products.name,
   description: tables.products.description,
+  descriptionEn: tables.products.descriptionEn,
   published: tables.products.published,
   sortOrder: tables.products.sortOrder,
   priceCents: tables.productPrices.amountCents,
@@ -107,6 +110,7 @@ export async function createProduct(
           slug: input.slug,
           name: input.name,
           description: input.description,
+          descriptionEn: input.descriptionEn,
           published: input.published,
           sortOrder: input.sortOrder,
           ...pickSpecs(input),
@@ -155,7 +159,7 @@ export async function updateProduct(
     if (!current) return "not_found" as const;
 
     const changed = (
-      ["name", "description", "published", "sortOrder"] as const
+      ["name", "description", "descriptionEn", "published", "sortOrder"] as const
     ).filter((field) => current[field] !== input[field]) as string[];
     for (const field of SPEC_FIELDS) {
       if (JSON.stringify(current[field] ?? (field === "polish" ? [] : null)) !== JSON.stringify(input[field])) {
@@ -169,6 +173,7 @@ export async function updateProduct(
         .set({
           name: input.name,
           description: input.description,
+          descriptionEn: input.descriptionEn,
           published: input.published,
           sortOrder: input.sortOrder,
           ...pickSpecs(input),

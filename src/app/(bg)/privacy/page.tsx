@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
-import { PendingLegal } from "@/components/pending-legal";
+import { PrivacyView } from "@/components/pages/info-views";
+import { getDict } from "@/i18n";
+import { buildMetadata } from "@/lib/page-meta";
 
-export const metadata: Metadata = {
-  title: "Политика за поверителност",
-  robots: { index: false, follow: true },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = getDict("bg");
+  return buildMetadata({
+    lang: "bg",
+    path: "/privacy",
+    title: t.legal.privacy,
+    description: undefined,
+    noindex: true,
+  });
+}
 
-export default function PrivacyPage() {
-  return <PendingLegal title="Политика за поверителност" />;
+export default function Page() {
+  return <PrivacyView lang="bg" />;
 }

@@ -54,3 +54,19 @@ describe("series proxy (real 404 status)", () => {
     },
   );
 });
+
+describe("English paths (/en) use the same 404 rules", () => {
+  it("passes a known series and answers 404 for an unknown one", async () => {
+    expect(passedOn(await run("/en/series/uds"))).toBe(true);
+    expect(rewrittenTo(await run("/en/series/nope"))).toMatch(/not-found-product/);
+  });
+});
+
+describeDb("English product proxy", () => {
+  it("passes a published product and answers 404 for a missing one", async () => {
+    await createProduct({ slug: "produkt-en" });
+
+    expect(passedOn(await run("/en/products/produkt-en"))).toBe(true);
+    expect(rewrittenTo(await run("/en/products/nyama"))).toMatch(/not-found-product/);
+  });
+});

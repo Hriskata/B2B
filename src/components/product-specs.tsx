@@ -1,12 +1,13 @@
 import type { PublicProduct } from "@/lib/catalog";
+import { getDict, type Lang } from "@/i18n";
 import { seriesName } from "@/lib/series";
 
-const nf = new Intl.NumberFormat("bg-BG");
-
-export function specSummary(p: PublicProduct): string | null {
+export function specSummary(p: PublicProduct, lang: Lang): string | null {
+  const t = getDict(lang).specs;
+  const nf = new Intl.NumberFormat(getDict(lang).localeTag);
   const parts = [
-    p.ports !== null ? `${nf.format(p.ports)} порта` : null,
-    p.fibers !== null ? `${nf.format(p.fibers)} влакна` : null,
+    p.ports !== null ? `${nf.format(p.ports)} ${t.portsUnit}` : null,
+    p.fibers !== null ? `${nf.format(p.fibers)} ${t.fibersUnit}` : null,
     p.rackUnits !== null ? `${p.rackUnits}RU` : null,
   ].filter(Boolean);
   return parts.length ? parts.join(" · ") : null;
@@ -14,31 +15,34 @@ export function specSummary(p: PublicProduct): string | null {
 
 // Key numbers and the full table. A value that is not known is not shown
 // (nothing is invented); technical data the catalog does not have is listed
-// as "по запитване".
-export function ProductSpecs({ product: p }: { product: PublicProduct }) {
+// as "on request".
+export function ProductSpecs({ product: p, lang }: { product: PublicProduct; lang: Lang }) {
+  const dict = getDict(lang);
+  const t = dict.specs;
+  const nf = new Intl.NumberFormat(dict.localeTag);
   const tiles = [
-    ["Портове", p.ports !== null ? nf.format(p.ports) : null],
-    ["Влакна", p.fibers !== null ? nf.format(p.fibers) : null],
-    ["Височина", p.rackUnits !== null ? `${p.rackUnits}RU` : null],
-    ["Конектор", p.connector],
-  ].filter((t): t is [string, string] => t[1] !== null);
+    [t.ports, p.ports !== null ? nf.format(p.ports) : null],
+    [t.fibers, p.fibers !== null ? nf.format(p.fibers) : null],
+    [t.height, p.rackUnits !== null ? `${p.rackUnits}RU` : null],
+    [t.connector, p.connector],
+  ].filter((x): x is [string, string] => x[1] !== null);
 
   const rows: [string, string][] = [];
   const add = (label: string, value: string | null) => {
     if (value) rows.push([label, value]);
   };
-  add("Модел (SKU)", p.sku);
-  add("Серия", seriesName(p.series));
-  add("Конектор", p.connector);
-  add("Портове", p.ports !== null ? nf.format(p.ports) : null);
-  add("MPO портове", p.mpoPorts !== null ? nf.format(p.mpoPorts) : null);
-  add("Влакна (стандартна конфигурация)", p.fibers !== null ? nf.format(p.fibers) : null);
-  add("Варианти до (влакна)", p.maxFibersVariant !== null ? nf.format(p.maxFibersVariant) : null);
-  add("Височина", p.rackUnits !== null ? `${p.rackUnits}RU` : null);
-  add("Влакна на RU", p.fibersPerRu !== null ? nf.format(p.fibersPerRu) : null);
-  add("Сплайс", p.splice === null ? null : p.splice ? "Да" : "Не");
+  add(t.sku, p.sku);
+  add(t.series, seriesName(p.series, lang));
+  add(t.connector, p.connector);
+  add(t.ports, p.ports !== null ? nf.format(p.ports) : null);
+  add(t.mpoPorts, p.mpoPorts !== null ? nf.format(p.mpoPorts) : null);
+  add(t.fibersStandard, p.fibers !== null ? nf.format(p.fibers) : null);
+  add(t.fibersUpTo, p.maxFibersVariant !== null ? nf.format(p.maxFibersVariant) : null);
+  add(t.height, p.rackUnits !== null ? `${p.rackUnits}RU` : null);
+  add(t.fibersPerRu, p.fibersPerRu !== null ? nf.format(p.fibersPerRu) : null);
+  add(t.splice, p.splice === null ? null : p.splice ? t.yes : t.no);
   // Shown only when the front door exists; "unknown" and "no" show nothing.
-  add("Предна врата", p.frontDoor === true ? "Да" : null);
+  add(t.frontDoor, p.frontDoor === true ? t.yes : null);
 
   return (
     <>
@@ -53,7 +57,7 @@ export function ProductSpecs({ product: p }: { product: PublicProduct }) {
         </ul>
       )}
       {p.polish.length > 0 && (
-        <ul className="flex flex-wrap gap-2" aria-label="Варианти на полиране и влакно">
+        <ul className="flex flex-wrap gap-2" aria-label={t.polishLabel}>
           {p.polish.map((v) => (
             <li key={v} className="rounded-full border border-zinc-400 px-3 py-1 text-sm dark:border-zinc-600">
               {v}
@@ -64,7 +68,7 @@ export function ProductSpecs({ product: p }: { product: PublicProduct }) {
       {rows.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <caption className="sr-only">Спецификации</caption>
+            <caption className="sr-only">{t.caption}</caption>
             <tbody>
               {rows.map(([label, value]) => (
                 <tr key={label} className="border-b border-zinc-200 dark:border-zinc-800">
@@ -74,12 +78,12 @@ export function ProductSpecs({ product: p }: { product: PublicProduct }) {
                   <td className="py-2">{value}</td>
                 </tr>
               ))}
-              {["Материал и цвят", "Размери и тегло", "Загуби (IL/RL)"].map((label) => (
+              {t.onRequestRows.map((label) => (
                 <tr key={label} className="border-b border-zinc-200 dark:border-zinc-800">
                   <th scope="row" className="py-2 pr-4 font-medium">
                     {label}
                   </th>
-                  <td className="py-2 text-zinc-500">По запитване</td>
+                  <td className="py-2 text-zinc-500">{t.onRequest}</td>
                 </tr>
               ))}
             </tbody>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { createContext, useContext, useEffect, useState } from "react";
+import { getDict, type Lang } from "@/i18n";
 
 type PriceMap = Record<string, { formatted: string }>;
 type State =
@@ -45,33 +46,34 @@ export function PricesProvider({ slugs, children }: { slugs: string[]; children:
   return <PricesContext value={state}>{children}</PricesContext>;
 }
 
-export function Price({ slug, className }: { slug: string; className?: string }) {
+export function Price({ slug, lang, className }: { slug: string; lang: Lang; className?: string }) {
   const state = useContext(PricesContext);
+  const t = getDict(lang).price;
 
   if (state.status === "guest") {
     return (
       <p className={className}>
         <Link href="/login" className="underline">
-          Влезте
+          {t.loginBefore}
         </Link>
-        , за да видите цената.
+        {t.loginAfter}
       </p>
     );
   }
   if (state.status === "error") {
-    return <p className={className}>Цената не може да бъде заредена.</p>;
+    return <p className={className}>{t.error}</p>;
   }
   const price = state.status === "ready" ? state.prices[slug] : undefined;
   return (
     <p className={className} aria-live="polite">
       {state.status === "loading" ? (
-        <span className="text-zinc-500">Цена: …</span>
+        <span className="text-zinc-500">{t.loading}</span>
       ) : price ? (
         <>
-          Цена за бройка: <strong>{price.formatted}</strong>
+          {t.perUnit} <strong>{price.formatted}</strong>
         </>
       ) : (
-        <span className="text-zinc-500">Цената се уточнява при запитване.</span>
+        <span className="text-zinc-500">{t.negotiable}</span>
       )}
     </p>
   );

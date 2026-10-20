@@ -571,6 +571,17 @@ describeDb("catalog editing: technical data", () => {
     expect(await productsInDb()).toHaveLength(0);
   });
 
+  it("saves an English description and treats an empty one as none", async () => {
+    await loginAdminAs("editor@firma.bg", "editor");
+    await redirectedTo(() => saveProductAction(initialFormState, productForm({ descriptionEn: "English text." })));
+    const [p] = await productsInDb();
+    expect(p.descriptionEn).toBe("English text.");
+
+    await saveProductAction(initialFormState, productForm({ id: p.id, descriptionEn: "  " }));
+
+    expect((await productsInDb())[0].descriptionEn).toBeNull();
+  });
+
   it("a viewer cannot change technical data", async () => {
     const { jar } = await loginAdminAs("viewer@firma.bg", "viewer");
     const product = await makeProduct({ slug: "x" });

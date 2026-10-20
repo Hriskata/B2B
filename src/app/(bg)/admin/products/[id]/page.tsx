@@ -34,6 +34,7 @@ async function Content({ params }: { params: PageProps<"/admin/products/[id]">["
           slug: product.slug,
           name: product.name,
           description: product.description,
+          descriptionEn: product.descriptionEn ?? "",
           sortOrder: String(product.sortOrder),
           price: product.priceCents === null ? "" : centsToInput(product.priceCents),
           published: product.published,

@@ -25,7 +25,7 @@ async function Content() {
   return (
     <ProductForm
       canEdit
-      initial={{ slug: "", name: "", description: "", sortOrder: "0", price: "", published: true, ...EMPTY_SPECS }}
+      initial={{ slug: "", name: "", description: "", descriptionEn: "", sortOrder: "0", price: "", published: true, ...EMPTY_SPECS }}
     />
   );
 }

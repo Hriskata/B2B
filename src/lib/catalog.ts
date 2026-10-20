@@ -25,13 +25,19 @@ export type ProductSpecs = {
   frontDoor: boolean | null;
 };
 
-export type PublicProduct = { slug: string; name: string; description: string } & ProductSpecs;
+export type PublicProduct = {
+  slug: string;
+  name: string;
+  description: string;
+  descriptionEn: string | null;
+} & ProductSpecs;
 
 // Explicit columns only: never `select()` of the whole table, and never prices.
 const publicColumns = {
   slug: tables.products.slug,
   name: tables.products.name,
   description: tables.products.description,
+  descriptionEn: tables.products.descriptionEn,
   sku: tables.products.sku,
   series: tables.products.series,
   connector: tables.products.connector,

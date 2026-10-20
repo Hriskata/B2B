@@ -10,7 +10,7 @@ import { authorize } from "@/lib/auth/current";
 import { isValidSlug } from "@/lib/catalog";
 import { failure, MESSAGES, success, type FormState } from "@/lib/form-state";
 import { parsePriceToCents } from "@/lib/money";
-import { SERIES } from "@/lib/series";
+import { SERIES_KEYS } from "@/lib/series";
 import { field, firstErrors } from "@/lib/validation";
 
 // Every action here asks the SERVER whether the logged-in admin holds the
@@ -26,6 +26,7 @@ const productFields = z.object({
     .trim()
     .min(1, "Въведете описание.")
     .max(5000, "Описанието е твърде дълго (до 5000 знака)."),
+  descriptionEn: z.string().trim().max(5000, "Описанието е твърде дълго (до 5000 знака).").optional(),
   sortOrder: z.coerce
     .number({ error: "Въведете число." })
     .int("Въведете цяло число.")
@@ -67,6 +68,7 @@ export async function saveProductAction(prev: FormState, formData: FormData): Pr
     slug: field(formData, "slug"),
     name: field(formData, "name"),
     description: field(formData, "description"),
+    descriptionEn: field(formData, "descriptionEn"),
     sortOrder: field(formData, "sortOrder"),
     price: field(formData, "price"),
     published: formData.get("published") === "on" ? "on" : "",
@@ -100,7 +102,7 @@ export async function saveProductAction(prev: FormState, formData: FormData): Pr
     if (n === "invalid") fieldErrors[key] = `${label}: цяло число от 1 до 99999 или празно.`;
     else counts[key] = n;
   }
-  const series = values.series === "" ? null : (SERIES.find((s) => s.key === values.series)?.key ?? "invalid");
+  const series = values.series === "" ? null : (SERIES_KEYS.find((k) => k === values.series) ?? "invalid");
   if (series === "invalid") fieldErrors.series = "Изберете серия от списъка.";
   const splice = triState(values.splice);
   const frontDoor = triState(values.frontDoor);
@@ -125,6 +127,7 @@ export async function saveProductAction(prev: FormState, formData: FormData): Pr
   const common = {
     name: parsed.data.name,
     description: parsed.data.description,
+    descriptionEn: parsed.data.descriptionEn || null,
     sortOrder: parsed.data.sortOrder,
     published: values.published === "on",
     priceCents,

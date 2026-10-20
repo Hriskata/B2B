@@ -1,9 +1,19 @@
 import type { Metadata } from "next";
-import { PendingLegal } from "@/components/pending-legal";
+import { TermsView } from "@/components/pages/info-views";
+import { getDict } from "@/i18n";
+import { buildMetadata } from "@/lib/page-meta";
 
-// Not indexed until the real text exists.
-export const metadata: Metadata = { title: "Общи условия", robots: { index: false, follow: true } };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = getDict("bg");
+  return buildMetadata({
+    lang: "bg",
+    path: "/terms",
+    title: t.legal.terms,
+    description: undefined,
+    noindex: true,
+  });
+}
 
-export default function TermsPage() {
-  return <PendingLegal title="Общи условия" />;
+export default function Page() {
+  return <TermsView lang="bg" />;
 }

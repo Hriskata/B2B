@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { Checkbox, Field, FormMessage, SubmitButton } from "@/components/form-parts";
 import { initialFormState, type FormState } from "@/lib/form-state";
-import { SERIES } from "@/lib/series";
+import { SERIES_KEYS, seriesName } from "@/lib/series";
 import { saveProductAction } from "../manage-actions";
 
 export type ProductFormValues = {
@@ -12,6 +12,7 @@ export type ProductFormValues = {
   slug: string;
   name: string;
   description: string;
+  descriptionEn: string;
   sortOrder: string;
   price: string;
   published: boolean;
@@ -106,6 +107,17 @@ export function ProductForm({ initial, canEdit }: { initial: ProductFormValues; 
         maxLength={5000}
       />
       <Field
+        name="descriptionEn"
+        label="Описание на английски (по желание)"
+        defaultValue={initial.descriptionEn}
+        disabled={!canEdit}
+        multiline
+        required={false}
+        hint="Ако е празно, на английската версия се показва кратък текст от техническите данни."
+        state={state}
+        maxLength={5000}
+      />
+      <Field
         name="price"
         label="Цена за бройка (евро)"
         defaultValue={initial.price}
@@ -134,7 +146,7 @@ export function ProductForm({ initial, canEdit }: { initial: ProductFormValues; 
           initial={initial.series}
           state={state}
           disabled={!canEdit}
-          options={[["", "Без серия"], ...SERIES.map((s): [string, string] => [s.key, s.name])]}
+          options={[["", "Без серия"], ...SERIES_KEYS.map((k): [string, string] => [k, seriesName(k) ?? k])]}
         />
         <Field name="connector" label="Конектор" defaultValue={initial.connector} disabled={!canEdit} required={false} hint="Например: LC, SC, MPO, LC/MPO." state={state} maxLength={20} />
         <div className="grid grid-cols-2 gap-4">
