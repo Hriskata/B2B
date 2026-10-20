@@ -61,6 +61,23 @@ export function resetPasswordMail(
   };
 }
 
+export function adminAddedMail(to: string, addedBy: string): Mail {
+  return {
+    to,
+    subject: "Добавени сте като администратор",
+    text: [
+      "Здравейте,",
+      "",
+      `${addedBy} ви добави като администратор.`,
+      `Вход: ${getEnv().APP_URL.replace(/\/$/, "")}/admin/login`,
+      "Временната парола ще ви бъде съобщена от този, който ви е добавил (не се изпраща по имейл).",
+      "При първия вход ще настроите двуфакторна автентикация и ще трябва веднага да смените паролата.",
+      "",
+      "Ако не очаквате това, свържете се с останалите администратори.",
+    ].join("\n"),
+  };
+}
+
 export function twoFactorResetMail(to: string, resetBy: string): Mail {
   return {
     to,

@@ -57,6 +57,7 @@ export async function createAdmin(
     role: "viewer" | "editor";
     status: "active" | "blocked";
     withTotp: boolean;
+    passwordMustChange: boolean;
   }> = {},
 ) {
   const secret = generateSecret();
@@ -71,6 +72,7 @@ export async function createAdmin(
       status: overrides.status ?? "active",
       totpSecretEnc: withTotp ? encryptSecret(secret) : null,
       totpEnabledAt: withTotp ? new Date() : null,
+      passwordMustChange: overrides.passwordMustChange ?? false,
     })
     .returning();
   if (withTotp) {

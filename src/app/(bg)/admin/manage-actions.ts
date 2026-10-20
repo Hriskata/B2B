@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { resetAdminTwoFactor } from "@/lib/admin/admins";
+import { createAdminAccount, DEFAULT_ADMIN_PASSWORD, resetAdminTwoFactor } from "@/lib/admin/admins";
 import { setCompanyBlocked, setUserBlocked } from "@/lib/admin/accounts";
 import { createProduct, updateProduct } from "@/lib/admin/products";
 import { authorize } from "@/lib/auth/current";
@@ -11,7 +11,7 @@ import { isValidSlug } from "@/lib/catalog";
 import { failure, MESSAGES, success, type FormState } from "@/lib/form-state";
 import { parsePriceToCents } from "@/lib/money";
 import { SERIES_KEYS } from "@/lib/series";
-import { field, firstErrors } from "@/lib/validation";
+import { emailSchema, field, firstErrors } from "@/lib/validation";
 
 // Every action here asks the SERVER whether the logged-in admin holds the
 // needed permission, and changes nothing when they do not. Hiding buttons in
@@ -181,6 +181,37 @@ export async function setCompanyBlockedAction(formData: FormData): Promise<void>
     formData.get("blocked") === "true",
   );
   refresh();
+}
+
+// Adds an admin with the default password; the new admin must change it at
+// the first login. Only roles with "manage_admins".
+export async function createAdminAction(prev: FormState, formData: FormData): Promise<FormState> {
+  const auth = await authorize("manage_admins");
+  if (!auth.ok) return failure(prev, NO_PERMISSION);
+
+  const rawEmail = field(formData, "email");
+  const role = field(formData, "role");
+  const values = { email: rawEmail, role };
+  const email = emailSchema.safeParse(rawEmail);
+  const fieldErrors: Record<string, string> = {};
+  if (!email.success) fieldErrors.email = "Въведете валиден имейл адрес.";
+  if (role !== "viewer" && role !== "editor") fieldErrors.role = "Изберете роля от списъка.";
+  if (!email.success || (role !== "viewer" && role !== "editor")) {
+    return failure(prev, MESSAGES.invalidInput, { fieldErrors, values });
+  }
+
+  const result = await createAdminAccount({ id: auth.admin.id, email: auth.admin.email }, email.data, role);
+  if (!result.ok) {
+    return failure(prev, MESSAGES.invalidInput, {
+      fieldErrors: { email: "Вече има админ с този имейл." },
+      values,
+    });
+  }
+  refresh(); // the admins list shows the new admin
+  return success(
+    prev,
+    `Администраторът ${email.data} е добавен. Временна парола: ${DEFAULT_ADMIN_PASSWORD}. Съобщете му я лично (не по имейл); при първия вход ще настрои 2FA и ще трябва да я смени.`,
+  );
 }
 
 export async function resetAdminTwoFactorAction(

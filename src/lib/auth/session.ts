@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, gt, sql } from "drizzle-orm";
+import { and, eq, gt, ne, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { getDb, tables } from "@/db";
 import { hashToken, randomToken } from "../crypto";
@@ -107,6 +107,22 @@ export async function destroySession(kind: SessionKind): Promise<void> {
       .where(eq(tables.sessions.tokenHash, hashToken(value)));
   }
   jar.delete(name);
+}
+
+// Ends every session of the subject except the one in the current cookie
+// (used when the logged-in admin changes their own password).
+export async function revokeOtherSessions(kind: SessionKind, subjectId: string): Promise<void> {
+  const value = (await cookies()).get(cookieName(kind))?.value;
+  const keep = value ? hashToken(value) : "";
+  await getDb()
+    .delete(tables.sessions)
+    .where(
+      and(
+        eq(tables.sessions.subjectType, kind),
+        eq(tables.sessions.subjectId, subjectId),
+        ne(tables.sessions.tokenHash, keep),
+      ),
+    );
 }
 
 // Used on password change/reset, 2FA reset and blocking (checklist B).

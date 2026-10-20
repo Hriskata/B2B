@@ -1,0 +1,1 @@
+ALTER TABLE "admins" ADD COLUMN "password_must_change" boolean DEFAULT false NOT NULL;

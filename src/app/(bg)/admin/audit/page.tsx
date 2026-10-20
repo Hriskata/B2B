@@ -14,6 +14,8 @@ const LABEL: Record<AuditAction, string> = {
   "company.block": "Блокирана фирма",
   "company.unblock": "Отблокирана фирма",
   "admin.2fa_reset": "Нулирана 2FA на админ",
+  "admin.create": "Добавен администратор",
+  "admin.password_change": "Смяна на парола на админ",
 };
 
 const when = new Intl.DateTimeFormat("bg-BG", {

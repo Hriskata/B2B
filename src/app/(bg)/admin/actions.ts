@@ -6,13 +6,15 @@ import {
   requestAdminPasswordReset,
   resetAdminPassword,
 } from "@/lib/auth/admin";
-import { getCurrentAdmin } from "@/lib/auth/current";
+import { changeAdminPassword } from "@/lib/admin/admins";
+import { getCurrentAdmin, requireAdminSession } from "@/lib/auth/current";
 import { createSession, destroySession } from "@/lib/auth/session";
 import { completeTotpSetup, verifySecondFactor } from "@/lib/auth/totp";
 import { verifyCaptchaFromForm } from "@/lib/captcha";
 import { getClientIp } from "@/lib/client-ip";
 import { failure, MESSAGES, success, type FormState } from "@/lib/form-state";
 import { validatePassword } from "@/lib/password";
+import { PASSWORD_RULES_TEXT } from "@/lib/password-policy";
 import { emailSchema, field } from "@/lib/validation";
 
 const LOGIN_FAILED = "Невалиден имейл или парола.";
@@ -69,6 +71,33 @@ export async function adminSetupAction(prev: FormState, formData: FormData): Pro
 
   await createSession("admin", admin.id, "full");
   return { ...success(prev, "Двуфакторната автентикация е включена."), recoveryCodes: result.recoveryCodes };
+}
+
+// The admin changes their own password. Open to a session that still has the
+// default password (that is the whole point), so it does not use authorize().
+export async function adminChangePasswordAction(prev: FormState, formData: FormData): Promise<FormState> {
+  const admin = await requireAdminSession();
+  const next = field(formData, "newPassword");
+  if (next !== field(formData, "repeatPassword")) {
+    return failure(prev, MESSAGES.invalidInput, { fieldErrors: { repeatPassword: "Паролите не съвпадат." } });
+  }
+  const result = await changeAdminPassword(
+    { id: admin.id, email: admin.email },
+    field(formData, "currentPassword"),
+    next,
+  );
+  switch (result) {
+    case "ok":
+      redirect("/admin");
+    case "rate_limited":
+      return failure(prev, MESSAGES.rateLimited);
+    case "wrong_password":
+      return failure(prev, MESSAGES.invalidInput, { fieldErrors: { currentPassword: "Невалидна текуща парола." } });
+    case "same":
+      return failure(prev, MESSAGES.invalidInput, { fieldErrors: { newPassword: "Новата парола трябва да е различна от текущата." } });
+    default:
+      return failure(prev, MESSAGES.invalidInput, { fieldErrors: { newPassword: PASSWORD_RULES_TEXT } });
+  }
 }
 
 export async function adminLogoutAction(): Promise<void> {

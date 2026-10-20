@@ -61,6 +61,9 @@ export const admins = pgTable("admins", {
   passwordHash: text("password_hash").notNull(),
   role: adminRole().notNull(),
   status: adminStatus().notNull().default("active"),
+  // Set for an admin added from the portal with the default password: every
+  // admin page redirects to the password change until it is done.
+  passwordMustChange: boolean("password_must_change").notNull().default(false),
   // AES-256-GCM encrypted TOTP secret (see lib/crypto.ts). Set when setup
   // starts; totpEnabledAt is set only after the first code is confirmed.
   totpSecretEnc: text("totp_secret_enc"),

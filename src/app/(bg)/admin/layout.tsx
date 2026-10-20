@@ -55,7 +55,10 @@ async function AdminNav() {
         <Link href="/admin/audit" className="underline">
           Журнал
         </Link>
-        <span className="ml-auto text-zinc-600 dark:text-zinc-400">
+        <Link href="/admin/change-password" className="ml-auto underline">
+          Смяна на парола
+        </Link>
+        <span className="text-zinc-600 dark:text-zinc-400">
           {admin.email} ({ROLE_LABEL[admin.role]})
         </span>
         <form action={adminLogoutAction}>

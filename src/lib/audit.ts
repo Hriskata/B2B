@@ -12,7 +12,9 @@ export type AuditAction =
   | "user.unblock"
   | "company.block"
   | "company.unblock"
-  | "admin.2fa_reset";
+  | "admin.2fa_reset"
+  | "admin.create"
+  | "admin.password_change";
 
 type Details = Record<string, string | number | boolean | null>;
 

@@ -36,12 +36,28 @@ export async function getCurrentAdmin(stage: SessionStage = "full") {
     await getDb().select().from(tables.admins).where(eq(tables.admins.id, session.subjectId))
   )[0];
   if (!admin || admin.status !== "active") return null;
-  return { id: admin.id, email: admin.email, role: admin.role, totpEnabled: !!admin.totpEnabledAt };
+  return {
+    id: admin.id,
+    email: admin.email,
+    role: admin.role,
+    totpEnabled: !!admin.totpEnabledAt,
+    mustChangePassword: admin.passwordMustChange,
+  };
 }
 
-export async function requireAdmin() {
+// Logged in with a complete session, whatever the state of the password.
+// Only the password-change page uses it.
+export async function requireAdminSession() {
   const admin = await getCurrentAdmin("full");
   if (!admin) redirect("/admin/login");
+  return admin;
+}
+
+// Every other admin page and action. An admin who still has the default
+// password can do nothing but change it.
+export async function requireAdmin() {
+  const admin = await requireAdminSession();
+  if (admin.mustChangePassword) redirect("/admin/change-password");
   return admin;
 }
 
