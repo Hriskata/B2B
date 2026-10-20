@@ -48,7 +48,7 @@ export async function ProductView({ lang, params }: { lang: Lang; params: Params
         {t.product.back}
       </Link>
       <article className="mt-6 grid gap-6 md:grid-cols-2 md:gap-10">
-        <ProductImage className="rounded-lg" />
+        <ProductImage sku={product.sku} alt={product.name} priority className="rounded-lg" />
         <div className="flex flex-col gap-4">
           <h1 className="text-3xl font-semibold">{product.name}</h1>
           <p className="whitespace-pre-line text-zinc-700 dark:text-zinc-300">

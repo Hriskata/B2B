@@ -11,7 +11,7 @@ export function ProductCard({ product, lang }: { product: PublicProduct; lang: L
   return (
     <li className="flex flex-col overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700">
       <Link href={href} className="block" aria-label={product.name}>
-        <ProductImage />
+        <ProductImage sku={product.sku} alt={product.name} />
       </Link>
       <div className="flex flex-1 flex-col gap-2 p-4">
         <h2 className="text-lg font-semibold">
