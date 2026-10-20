@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeProductEn, productDescription } from "@/lib/product-text";
+import { describeProductEn, productDescription, productTitle } from "@/lib/product-text";
 import type { PublicProduct } from "@/lib/catalog";
 import { getDict, localePath, SHARED_PATHS, switchHref } from "./index";
 
@@ -96,5 +96,23 @@ describe("product text", () => {
   it("describes MPO ports only when there are some", () => {
     expect(describeProductEn({ ...base, mpoPorts: 2 })).toContain(", 2 MPO ports");
     expect(describeProductEn(base)).not.toContain("MPO");
+  });
+});
+
+describe("productTitle", () => {
+  const p = {
+    slug: "x", name: "High-Density Splice SC12", description: "", descriptionEn: null, sku: "HDS-ODF-001-SC12",
+    series: "hds", connector: "SC", ports: 12, mpoPorts: null, fibers: 12, maxFibersVariant: null,
+    rackUnits: 1, fibersPerRu: 12, polish: [], splice: true, frontDoor: true,
+  } satisfies PublicProduct;
+
+  it("follows the plan template in both languages", () => {
+    expect(productTitle(p, "bg")).toBe("HDS-ODF-001-SC12 – 12 SC порта, 12 влакна, 1U | ODFFiber");
+    expect(productTitle(p, "en")).toBe("HDS-ODF-001-SC12 – 12 SC ports, 12 fibers, 1U | ODFFiber");
+  });
+
+  it("falls back to the model name when numbers are missing", () => {
+    expect(productTitle({ ...p, fibers: null }, "bg")).toBe("High-Density Splice SC12");
+    expect(productTitle({ ...p, sku: null }, "en")).toBe("High-Density Splice SC12");
   });
 });

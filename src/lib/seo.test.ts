@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatMoney } from "./money";
-import { organizationJsonLd, productJsonLd, serializeJsonLd } from "./seo";
+import { breadcrumbJsonLd, organizationJsonLd, productJsonLd, serializeJsonLd } from "./seo";
 
 const product = { slug: "produkt-1", name: "Продукт 1", description: "Описание." };
 
@@ -61,5 +61,21 @@ describe("organizationJsonLd", () => {
       name: "ODFFiber",
       url: "https://odffiber.example",
     });
+  });
+});
+
+describe("breadcrumbJsonLd", () => {
+  it("numbers the items from 1 and has no price", () => {
+    const data = breadcrumbJsonLd([
+      { name: "Продукти", url: "https://x.bg/products" },
+      { name: "Модел", url: "https://x.bg/products/m" },
+    ]);
+
+    expect(data["@type"]).toBe("BreadcrumbList");
+    expect(data.itemListElement.map((i) => [i.position, i.name, i.item])).toEqual([
+      [1, "Продукти", "https://x.bg/products"],
+      [2, "Модел", "https://x.bg/products/m"],
+    ]);
+    expect(JSON.stringify(data)).not.toMatch(/price|offers/i);
   });
 });

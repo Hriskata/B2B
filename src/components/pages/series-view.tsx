@@ -8,6 +8,7 @@ import { ProductCard } from "@/components/product-card";
 import { getDict, localePath, type Lang } from "@/i18n";
 import { listPublicProducts } from "@/lib/catalog";
 import { alternatesFor, pageUrl } from "@/lib/page-meta";
+import { breadcrumbJsonLd, serializeJsonLd } from "@/lib/seo";
 import { seriesName } from "@/lib/series";
 
 type Params = Promise<{ key: string }>;
@@ -41,6 +42,9 @@ export async function SeriesView({ lang, params }: { lang: Lang; params: Params 
         {t.back}
       </Link>
       <h1 className="mt-6 text-3xl font-semibold">{name}</h1>
+      <Suspense>
+        <Breadcrumbs lang={lang} seriesKey={key} name={name} />
+      </Suspense>
       <Suspense fallback={<p className="mt-6">{t.loading}</p>}>
         <Models seriesKey={key} lang={lang} />
       </Suspense>
@@ -81,5 +85,24 @@ async function Models({ seriesKey, lang }: { seriesKey: string; lang: Lang }) {
         </ul>
       </PricesProvider>
     </>
+  );
+}
+
+// Structured data only (no visible output). Reads APP_URL, so it runs at request time.
+async function Breadcrumbs({ lang, seriesKey, name }: { lang: Lang; seriesKey: string; name: string }) {
+  await connection();
+  const t = getDict(lang);
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: serializeJsonLd(
+          breadcrumbJsonLd([
+            { name: t.header.products, url: pageUrl(lang, "/products") },
+            { name, url: pageUrl(lang, `/series/${seriesKey}`) },
+          ]),
+        ),
+      }}
+    />
   );
 }

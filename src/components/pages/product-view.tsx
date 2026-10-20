@@ -9,8 +9,8 @@ import { getDict, localePath, type Lang } from "@/i18n";
 import { getPublicProduct } from "@/lib/catalog";
 import { getEnv } from "@/lib/env";
 import { alternatesFor, pageUrl } from "@/lib/page-meta";
-import { productDescription } from "@/lib/product-text";
-import { productJsonLd, serializeJsonLd } from "@/lib/seo";
+import { productDescription, productTitle } from "@/lib/product-text";
+import { breadcrumbJsonLd, productJsonLd, serializeJsonLd } from "@/lib/seo";
 
 type Params = Promise<{ slug: string }>;
 
@@ -22,13 +22,14 @@ export async function productMetadata(lang: Lang, params: Params): Promise<Metad
   const path = `/products/${product.slug}`;
   const description = productDescription(product, lang).slice(0, 160);
   // No price in title, description or Open Graph data.
+  const title = productTitle(product, lang);
   return {
-    title: product.name,
+    title,
     description,
     alternates: alternatesFor(lang, path),
     openGraph: {
       type: "website",
-      title: product.name,
+      title,
       description,
       url: pageUrl(lang, path),
       locale: getDict(lang).ogLocale,
@@ -69,7 +70,18 @@ export async function ProductView({ lang, params }: { lang: Lang; params: Params
             {t.product.inquiry}
           </Link>
         </div>
-        {/* Serialised and escaped by serializeJsonLd; contains no price. */}
+        {/* Serialised and escaped by serializeJsonLd; contain no price. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: serializeJsonLd(
+              breadcrumbJsonLd([
+                { name: t.header.products, url: pageUrl(lang, "/products") },
+                { name: product.name, url: pageUrl(lang, `/products/${product.slug}`) },
+              ]),
+            ),
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

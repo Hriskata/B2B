@@ -23,3 +23,7 @@ Thumbs.db
 next-env.d.ts
 *.pem
 .vercel
+
+# database backups (contain all data, never commit)
+*.dump
+*.sql.gz

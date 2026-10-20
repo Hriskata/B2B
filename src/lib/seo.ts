@@ -15,6 +15,20 @@ export function productJsonLd(product: Pick<PublicProduct, "slug" | "name" | "de
   };
 }
 
+// BreadcrumbList for search engines: items in order, each with an absolute URL.
+export function breadcrumbJsonLd(items: { name: string; url: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}
+
 export function organizationJsonLd(name: string, baseUrl: string) {
   return { "@context": "https://schema.org", "@type": "Organization", name, url: baseUrl.replace(/\/$/, "") };
 }

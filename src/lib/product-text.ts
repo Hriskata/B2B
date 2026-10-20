@@ -21,3 +21,16 @@ export function productDescription(p: PublicProduct, lang: Lang): string {
   if (lang === "bg") return p.description;
   return p.descriptionEn ?? describeProductEn(p) ?? p.description;
 }
+
+// Page title of a product: "{SKU} – {ports} {connector} ports, {fibers} fibers,
+// {RU}U | ODFFiber". Falls back to the model name when the numbers are missing.
+export function productTitle(p: PublicProduct, lang: Lang): string {
+  if (!p.sku || p.ports === null || p.fibers === null || p.rackUnits === null || !p.connector) {
+    return p.name;
+  }
+  const nums =
+    lang === "bg"
+      ? `${p.ports} ${p.connector} порта, ${p.fibers} влакна, ${p.rackUnits}U`
+      : `${p.ports} ${p.connector} ports, ${p.fibers} fibers, ${p.rackUnits}U`;
+  return `${p.sku} – ${nums} | ODFFiber`;
+}
