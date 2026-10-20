@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { logoutAction } from "@/app/(auth)/login/actions";
+import { logoutAction } from "@/app/(bg)/(auth)/login/actions";
 import { getCurrentUser } from "@/lib/auth/current";
 
 // Minimal navigation for phase 1. The real site header comes with the

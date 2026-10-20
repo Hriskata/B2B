@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getDb, tables } from "@/db";
-import { loginAction } from "@/app/(auth)/login/actions";
+import { loginAction } from "@/app/(bg)/(auth)/login/actions";
 import { getCurrentAdmin, getCurrentUser } from "@/lib/auth/current";
 import { listPublicProducts } from "@/lib/catalog";
 import { initialFormState } from "@/lib/form-state";

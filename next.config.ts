@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   cacheComponents: true,
+  // 404 for URLs that match no route; needed because the site has two root layouts (bg, en).
+  experimental: { globalNotFound: true },
   partialPrefetching: true,
   turbopack: {
     rules: {

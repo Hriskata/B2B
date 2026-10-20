@@ -4,7 +4,7 @@ import { getDb, tables } from "@/db";
 import { getCurrentAdmin, getCurrentUser, requireAdmin } from "@/lib/auth/current";
 import { decryptSecret } from "@/lib/crypto";
 import { initialFormState } from "@/lib/form-state";
-import { loginAction } from "@/app/(auth)/login/actions";
+import { loginAction } from "@/app/(bg)/(auth)/login/actions";
 import { codeFor, createAdmin, createUser, fd, PASSWORD } from "@/test/factories";
 import { sentMails, tokenFromMail } from "@/test/mail-capture";
 import { cookieJar, redirectedTo } from "@/test/next-mocks";
@@ -381,7 +381,7 @@ describeDb("admin password reset", () => {
   it("a customer reset token does not work on the admin reset", async () => {
     await createUser();
     await createAdmin();
-    const { forgotPasswordAction } = await import("@/app/(auth)/forgot-password/actions");
+    const { forgotPasswordAction } = await import("@/app/(bg)/(auth)/forgot-password/actions");
     await forgotPasswordAction(
       initialFormState,
       fd({ email: "client@firma.bg", "cf-turnstile-response": "ok" }),

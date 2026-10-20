@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Analytics } from "@/components/analytics";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import "./globals.css";
+import "../globals.css";
 
 // Placeholder site name until branding is provided.
 export const metadata: Metadata = {

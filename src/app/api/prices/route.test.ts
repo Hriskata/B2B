@@ -6,7 +6,7 @@ import { hashToken, randomToken } from "@/lib/crypto";
 import { createProduct } from "@/test/catalog-factories";
 import { codeFor, createAdmin, createUser, fd, PASSWORD } from "@/test/factories";
 import { cookieJar, redirectedTo } from "@/test/next-mocks";
-import { adminLoginAction, adminVerifyAction } from "@/app/admin/actions";
+import { adminLoginAction, adminVerifyAction } from "@/app/(bg)/admin/actions";
 import { getCurrentAdmin } from "@/lib/auth/current";
 import { initialFormState } from "@/lib/form-state";
 import { GET } from "./route";
