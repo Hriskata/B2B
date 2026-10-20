@@ -10,6 +10,7 @@ import { authorize } from "@/lib/auth/current";
 import { isValidSlug } from "@/lib/catalog";
 import { failure, MESSAGES, success, type FormState } from "@/lib/form-state";
 import { parsePriceToCents } from "@/lib/money";
+import { SERIES } from "@/lib/series";
 import { field, firstErrors } from "@/lib/validation";
 
 // Every action here asks the SERVER whether the logged-in admin holds the
@@ -36,6 +37,27 @@ const slugField = z
   .string()
   .refine(isValidSlug, "Само малки латински букви, цифри и тирета (например: moy-produkt).");
 
+const SPEC_NUMBER_FIELDS = [
+  ["ports", "Портове"],
+  ["mpoPorts", "MPO портове"],
+  ["fibers", "Влакна"],
+  ["maxFibersVariant", "Варианти до (влакна)"],
+  ["rackUnits", "Височина (RU)"],
+] as const;
+
+// Empty = unknown (null). Anything else must be a whole number from 1 to 99999.
+function optionalCount(value: string): number | null | "invalid" {
+  if (value === "") return null;
+  if (!/^\d{1,5}$/.test(value)) return "invalid";
+  const n = Number(value);
+  return n >= 1 ? n : "invalid";
+}
+
+function triState(value: string): boolean | null | "invalid" {
+  if (value === "") return null;
+  return value === "1" ? true : value === "0" ? false : "invalid";
+}
+
 export async function saveProductAction(prev: FormState, formData: FormData): Promise<FormState> {
   const auth = await authorize("edit_catalog");
   if (!auth.ok) return failure(prev, NO_PERMISSION);
@@ -48,6 +70,16 @@ export async function saveProductAction(prev: FormState, formData: FormData): Pr
     sortOrder: field(formData, "sortOrder"),
     price: field(formData, "price"),
     published: formData.get("published") === "on" ? "on" : "",
+    series: field(formData, "series"),
+    connector: field(formData, "connector"),
+    ports: field(formData, "ports"),
+    mpoPorts: field(formData, "mpoPorts"),
+    fibers: field(formData, "fibers"),
+    maxFibersVariant: field(formData, "maxFibersVariant"),
+    rackUnits: field(formData, "rackUnits"),
+    polish: field(formData, "polish"),
+    splice: field(formData, "splice"),
+    frontDoor: field(formData, "frontDoor"),
   };
 
   const parsed = productFields.safeParse(values);
@@ -60,7 +92,32 @@ export async function saveProductAction(prev: FormState, formData: FormData): Pr
   if (priceCents === "invalid") {
     fieldErrors.price = "Въведете сума като 12,50 (над 0) или оставете празно.";
   }
-  if (!parsed.success || priceCents === "invalid" || Object.keys(fieldErrors).length > 0) {
+
+  // Technical data (all optional).
+  const counts: Record<string, number | null> = {};
+  for (const [key, label] of SPEC_NUMBER_FIELDS) {
+    const n = optionalCount(values[key]);
+    if (n === "invalid") fieldErrors[key] = `${label}: цяло число от 1 до 99999 или празно.`;
+    else counts[key] = n;
+  }
+  const series = values.series === "" ? null : (SERIES.find((s) => s.key === values.series)?.key ?? "invalid");
+  if (series === "invalid") fieldErrors.series = "Изберете серия от списъка.";
+  const splice = triState(values.splice);
+  const frontDoor = triState(values.frontDoor);
+  if (splice === "invalid") fieldErrors.splice = "Изберете от списъка.";
+  if (frontDoor === "invalid") fieldErrors.frontDoor = "Изберете от списъка.";
+  if (values.connector.length > 20) fieldErrors.connector = "Твърде дълго (до 20 знака).";
+  const polish = values.polish
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  if (polish.length > 10 || polish.some((v) => v.length > 30)) {
+    fieldErrors.polish = "До 10 варианта, разделени със запетая (всеки до 30 знака).";
+  }
+
+  if (
+    !parsed.success || priceCents === "invalid" || series === "invalid" || splice === "invalid" ||
+    frontDoor === "invalid" || Object.keys(fieldErrors).length > 0) {
     return failure(prev, MESSAGES.invalidInput, { fieldErrors, values });
   }
 
@@ -71,6 +128,16 @@ export async function saveProductAction(prev: FormState, formData: FormData): Pr
     sortOrder: parsed.data.sortOrder,
     published: values.published === "on",
     priceCents,
+    series,
+    connector: values.connector || null,
+    ports: counts.ports,
+    mpoPorts: counts.mpoPorts,
+    fibers: counts.fibers,
+    maxFibersVariant: counts.maxFibersVariant,
+    rackUnits: counts.rackUnits,
+    polish,
+    splice,
+    frontDoor,
   };
 
   if (!id) {

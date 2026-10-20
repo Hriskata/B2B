@@ -38,3 +38,19 @@ describeDb("product proxy (real 404 status)", () => {
     },
   );
 });
+
+describe("series proxy (real 404 status)", () => {
+  it.each(["/series/hds", "/series/uds", "/series/quick-fit", "/series/mpo"])("passes a known series: %s", async (path) => {
+    expect(passedOn(await run(path))).toBe(true);
+  });
+
+  it.each(["/series/nope", "/series/HDS", "/series/%E0%A4%A", "/series/hds%2Fx"])(
+    "answers 404 for an unknown series: %s",
+    async (path) => {
+      const res = await run(path);
+
+      expect(passedOn(res)).toBe(false);
+      expect(rewrittenTo(res)).toMatch(/not-found-product/);
+    },
+  );
+});

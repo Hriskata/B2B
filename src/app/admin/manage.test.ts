@@ -523,3 +523,61 @@ describeDb("resetting another admin's 2FA", () => {
     expect(await getDb().select().from(tables.auditLog).where(and(eq(tables.auditLog.action, "admin.2fa_reset")))).toHaveLength(0);
   });
 });
+
+describeDb("catalog editing: technical data", () => {
+  const specs = {
+    series: "hds", connector: "LC", ports: "12", mpoPorts: "", fibers: "24",
+    maxFibersVariant: "48", rackUnits: "1", polish: "SM/UPC, SM/APC", splice: "1", frontDoor: "",
+  };
+
+  it("saves technical data; an empty field is unknown, not zero or false", async () => {
+    await loginAdminAs("editor@firma.bg", "editor");
+
+    await redirectedTo(() => saveProductAction(initialFormState, productForm(specs)));
+
+    const [p] = await productsInDb();
+    expect(p).toMatchObject({
+      series: "hds", connector: "LC", ports: 12, mpoPorts: null, fibers: 24, maxFibersVariant: 48,
+      rackUnits: 1, polish: ["SM/UPC", "SM/APC"], splice: true, frontDoor: null,
+    });
+    const [pub] = await listPublicProducts();
+    expect(pub.fibersPerRu).toBe(24);
+  });
+
+  it("journals a change of technical data with the changed field names only", async () => {
+    await loginAdminAs("editor@firma.bg", "editor");
+    await redirectedTo(() => saveProductAction(initialFormState, productForm(specs)));
+    const [p] = await productsInDb();
+
+    await saveProductAction(
+      initialFormState,
+      productForm({ ...specs, id: p.id, fibers: "48", frontDoor: "1" }),
+    );
+
+    const update = (await auditRows()).find((r) => r.action === "product.update");
+    expect(update?.details).toMatchObject({ fields: "fibers,frontDoor" });
+    expect(JSON.stringify(update)).not.toContain("SM/UPC");
+  });
+
+  it.each([
+    ["ports", "0"], ["ports", "-3"], ["fibers", "1.5"], ["rackUnits", "abc"],
+    ["series", "other"], ["splice", "maybe"], ["frontDoor", "2"],
+  ])("rejects an invalid %s (%s) and stores nothing", async (name, value) => {
+    await loginAdminAs("editor@firma.bg", "editor");
+
+    const state = await saveProductAction(initialFormState, productForm({ ...specs, [name]: value }));
+
+    expect(state.fieldErrors?.[name]).toBeTruthy();
+    expect(await productsInDb()).toHaveLength(0);
+  });
+
+  it("a viewer cannot change technical data", async () => {
+    const { jar } = await loginAdminAs("viewer@firma.bg", "viewer");
+    const product = await makeProduct({ slug: "x" });
+    useJar(jar);
+
+    await saveProductAction(initialFormState, productForm({ ...specs, id: product.id }));
+
+    expect((await productsInDb())[0].series).toBeNull();
+  });
+});

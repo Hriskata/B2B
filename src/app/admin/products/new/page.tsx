@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth/current";
 import { can } from "@/lib/permissions";
-import { ProductForm } from "../product-form";
+import { EMPTY_SPECS, ProductForm } from "../product-form";
 
 export const metadata: Metadata = { title: "Нов продукт (админ)" };
 
@@ -25,7 +25,7 @@ async function Content() {
   return (
     <ProductForm
       canEdit
-      initial={{ slug: "", name: "", description: "", sortOrder: "0", price: "", published: true }}
+      initial={{ slug: "", name: "", description: "", sortOrder: "0", price: "", published: true, ...EMPTY_SPECS }}
     />
   );
 }

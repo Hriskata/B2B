@@ -37,6 +37,16 @@ async function Content({ params }: { params: PageProps<"/admin/products/[id]">["
           sortOrder: String(product.sortOrder),
           price: product.priceCents === null ? "" : centsToInput(product.priceCents),
           published: product.published,
+          series: product.series ?? "",
+          connector: product.connector ?? "",
+          ports: product.ports?.toString() ?? "",
+          mpoPorts: product.mpoPorts?.toString() ?? "",
+          fibers: product.fibers?.toString() ?? "",
+          maxFibersVariant: product.maxFibersVariant?.toString() ?? "",
+          rackUnits: product.rackUnits?.toString() ?? "",
+          polish: (product.polish ?? []).join(", "),
+          splice: product.splice === null ? "" : product.splice ? "1" : "0",
+          frontDoor: product.frontDoor === null ? "" : product.frontDoor ? "1" : "0",
         }}
       />
     </>

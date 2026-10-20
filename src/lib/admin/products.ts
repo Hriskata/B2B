@@ -4,7 +4,25 @@ import { updateTag } from "next/cache";
 import { getDb, tables } from "@/db";
 import { writeAudit, type Actor } from "../audit";
 
-export type ProductInput = {
+// Technical data; every value may be unknown (null / empty list).
+export type ProductSpecsInput = {
+  series: "hds" | "uds" | "quick-fit" | "mpo" | null;
+  connector: string | null;
+  ports: number | null;
+  mpoPorts: number | null;
+  fibers: number | null;
+  maxFibersVariant: number | null;
+  rackUnits: number | null;
+  polish: string[];
+  splice: boolean | null;
+  frontDoor: boolean | null;
+};
+
+const SPEC_FIELDS = [
+  "series", "connector", "ports", "mpoPorts", "fibers", "maxFibersVariant", "rackUnits", "polish", "splice", "frontDoor",
+] as const;
+
+export type ProductInput = ProductSpecsInput & {
   slug: string;
   name: string;
   description: string;
@@ -14,7 +32,22 @@ export type ProductInput = {
   priceCents: number | null;
 };
 
-export type AdminProduct = ProductInput & { id: string };
+export type AdminProduct = Omit<ProductInput, "polish"> & { id: string; polish: string[] | null };
+
+function pickSpecs(input: ProductSpecsInput): ProductSpecsInput {
+  return {
+    series: input.series,
+    connector: input.connector,
+    ports: input.ports,
+    mpoPorts: input.mpoPorts,
+    fibers: input.fibers,
+    maxFibersVariant: input.maxFibersVariant,
+    rackUnits: input.rackUnits,
+    polish: input.polish,
+    splice: input.splice,
+    frontDoor: input.frontDoor,
+  };
+}
 
 const PG_UNIQUE_VIOLATION = "23505";
 
@@ -31,6 +64,16 @@ const selection = {
   published: tables.products.published,
   sortOrder: tables.products.sortOrder,
   priceCents: tables.productPrices.amountCents,
+  series: tables.products.series,
+  connector: tables.products.connector,
+  ports: tables.products.ports,
+  mpoPorts: tables.products.mpoPorts,
+  fibers: tables.products.fibers,
+  maxFibersVariant: tables.products.maxFibersVariant,
+  rackUnits: tables.products.rackUnits,
+  polish: tables.products.polish,
+  splice: tables.products.splice,
+  frontDoor: tables.products.frontDoor,
 };
 
 // Admin view: includes unpublished products and prices.
@@ -66,6 +109,7 @@ export async function createProduct(
           description: input.description,
           published: input.published,
           sortOrder: input.sortOrder,
+          ...pickSpecs(input),
         })
         .returning({ id: tables.products.id });
       if (input.priceCents !== null) {
@@ -112,7 +156,12 @@ export async function updateProduct(
 
     const changed = (
       ["name", "description", "published", "sortOrder"] as const
-    ).filter((field) => current[field] !== input[field]);
+    ).filter((field) => current[field] !== input[field]) as string[];
+    for (const field of SPEC_FIELDS) {
+      if (JSON.stringify(current[field] ?? (field === "polish" ? [] : null)) !== JSON.stringify(input[field])) {
+        changed.push(field);
+      }
+    }
 
     if (changed.length > 0) {
       await tx
@@ -122,6 +171,7 @@ export async function updateProduct(
           description: input.description,
           published: input.published,
           sortOrder: input.sortOrder,
+          ...pickSpecs(input),
           updatedAt: new Date(),
         })
         .where(eq(tables.products.id, id));

@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { getDb, tables } from "@/db";
 import { isValidSlug } from "@/lib/catalog";
+import { seriesName } from "@/lib/series";
 
 // Runs before a product page renders. The page is streamed behind a static
 // shell that is sent with status 200, so a missing product cannot become a
@@ -13,6 +14,19 @@ import { isValidSlug } from "@/lib/catalog";
 // returns nothing for a product that is missing. If the database cannot be
 // reached the request is passed on and the page decides.
 export async function proxy(request: NextRequest) {
+  // Series: a fixed list, so no database is needed to answer 404.
+  if (request.nextUrl.pathname.startsWith("/series/")) {
+    let key = "";
+    try {
+      key = decodeURIComponent(request.nextUrl.pathname.split("/")[2] ?? "");
+    } catch {
+      // Broken %-sequence: not a series.
+    }
+    return seriesName(key)
+      ? NextResponse.next()
+      : NextResponse.rewrite(new URL("/not-found-product", request.url));
+  }
+
   let slug = "";
   try {
     slug = decodeURIComponent(request.nextUrl.pathname.split("/")[2] ?? "");
@@ -41,5 +55,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/products/:slug"],
+  matcher: ["/products/:slug", "/series/:key"],
 };

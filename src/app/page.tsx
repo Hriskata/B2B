@@ -2,9 +2,11 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { ProductCard } from "@/components/product-card";
 import { PricesProvider } from "@/components/prices";
+import Link from "next/link";
 import { CatalogFiltersForm } from "@/components/catalog-filters";
 import { listPublicProducts } from "@/lib/catalog";
 import { applyFilters, parseFilters } from "@/lib/catalog-filter";
+import { SERIES } from "@/lib/series";
 
 // Template copy; the real texts come from the product owner (phase 6).
 export default function Home({ searchParams }: PageProps<"/">) {
@@ -16,6 +18,17 @@ export default function Home({ searchParams }: PageProps<"/">) {
           Разгледайте продуктите ни. Цените се виждат след вход, а покупката става чрез запитване,
           при което цената се договаря. Минимална поръчка: 3 броя.
         </p>
+        <nav aria-label="Серии" className="mt-4 flex flex-wrap gap-2">
+          {SERIES.map((s) => (
+            <Link
+              key={s.key}
+              href={`/series/${s.key}`}
+              className="rounded-full border border-zinc-400 px-3 py-1 text-sm hover:bg-zinc-100 dark:border-zinc-600 dark:hover:bg-zinc-900"
+            >
+              {s.name}
+            </Link>
+          ))}
+        </nav>
       </section>
       <Suspense fallback={<GridSkeleton />}>
         <Catalog searchParams={searchParams} />
