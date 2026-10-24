@@ -435,3 +435,121 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Product showcase (home page): description cards, hotspots, lines. */
+@layer components {
+  .showcase-card {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--surface-card);
+    padding: 16px;
+    cursor: pointer;
+    transition:
+      border-color 0.2s,
+      background-color 0.2s;
+  }
+  .showcase-card[data-active="true"] {
+    border-color: var(--border-ember);
+    background: var(--surface-raised);
+  }
+  .showcase-card:focus-visible,
+  .showcase-dot:focus-visible {
+    outline: 2px solid var(--ember-300);
+    outline-offset: 2px;
+  }
+  .showcase-num {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 9999px;
+    border: 1px solid var(--border-subtle);
+    font-size: 12px;
+    color: var(--text-secondary);
+    transition:
+      background-color 0.2s,
+      border-color 0.2s,
+      color 0.2s;
+  }
+  .showcase-card[data-active="true"] .showcase-num {
+    background: var(--ember-500);
+    border-color: var(--ember-500);
+    color: var(--text-on-ember);
+  }
+  /* Extra text opens smoothly (0fr to 1fr), without measuring heights. */
+  .showcase-more {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows 0.25s ease,
+      opacity 0.25s ease;
+  }
+  .showcase-more[data-open="true"] {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  /* The hit area is 44px; the visible marker is smaller. */
+  .showcase-dot {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+    border-radius: 9999px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-on-ember);
+  }
+  .showcase-dot > span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 9999px;
+    background: var(--ember-600);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+    transition:
+      transform 0.2s,
+      background-color 0.2s,
+      box-shadow 0.2s;
+  }
+  /* No exact outline exists yet: a soft local glow around the marker. */
+  .showcase-dot[data-active="true"] > span {
+    transform: scale(1.2);
+    background: var(--ember-500);
+    box-shadow:
+      0 0 0 6px rgba(215, 0, 15, 0.28),
+      0 0 24px 8px rgba(215, 0, 15, 0.35);
+  }
+  .showcase-mask {
+    fill: rgba(215, 0, 15, 0.35);
+    stroke: var(--ember-500);
+    stroke-width: 2;
+  }
+  .showcase-line {
+    stroke: var(--text-muted);
+    stroke-opacity: 0.35;
+    stroke-width: 1;
+    transition:
+      stroke 0.2s,
+      stroke-opacity 0.2s,
+      stroke-width 0.2s;
+  }
+  .showcase-line[data-active="true"] {
+    stroke: var(--ember-300);
+    stroke-opacity: 1;
+    stroke-width: 1.5;
+  }
+}

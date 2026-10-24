@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { ProductShowcase } from "@/components/showcase/product-showcase";
 import { getDict, localePath, type Lang } from "@/i18n";
 import { listPublicProducts } from "@/lib/catalog";
 import { getEnv } from "@/lib/env";
@@ -55,6 +56,10 @@ export function HomeView({ lang }: { lang: Lang }) {
           ))}
         </ul>
       </section>
+
+      <Suspense>
+        <ProductShowcase lang={lang} />
+      </Suspense>
 
       <section className="mt-16 sm:mt-24">
         <h2 className="t-display-l mb-8 text-center text-primary">
