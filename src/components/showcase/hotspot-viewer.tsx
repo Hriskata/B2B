@@ -166,7 +166,7 @@ export function HotspotViewer({
 
         <div className="order-1 lg:order-2">
           <div
-            className="image-tile relative"
+            className="relative"
             style={{ aspectRatio: `${PICTURE.width} / ${PICTURE.height}` }}
             onClick={() => setSelected(null)}
           >

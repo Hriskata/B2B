@@ -80,7 +80,7 @@ export async function ProductShowcase({ lang }: { lang: Lang }) {
       <div className="mt-8">
         <HotspotViewer
           items={items}
-          src={`/images/products/${SHOWCASE_SKU.toLowerCase()}.webp`}
+          src={`/images/products/${SHOWCASE_SKU.toLowerCase()}-cutout.webp`}
           alt={p.name}
           labels={{
             list: t.listLabel,

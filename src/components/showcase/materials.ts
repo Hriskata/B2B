@@ -1,3 +1,5 @@
+// The picture is a cut-out (transparent background) of the catalog render,
+// made from public/images/products/<sku>.webp; see docs/PLAN.md.
 // Layout of the product showcase (the texts live in src/i18n, the numbers in
 // the catalog). To change a hotspot, edit its x and y here.
 //
