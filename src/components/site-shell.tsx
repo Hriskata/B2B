@@ -1,6 +1,7 @@
 import { Inter } from "next/font/google";
 import { Suspense } from "react";
 import { getDict, type Lang } from "@/i18n";
+import { AdminSidebar } from "./admin-sidebar";
 import { Analytics } from "./analytics";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
@@ -29,7 +30,14 @@ export function SiteShell({
     >
       <body className="min-h-full flex flex-col">
         <SiteHeader lang={lang} />
-        {children}
+        {/* A logged-in admin keeps the admin menu (left column on a laptop or
+            desktop) on every page, public ones included; nobody else sees it. */}
+        <div className="flex flex-1 flex-col lg:flex-row">
+          <Suspense fallback={null}>
+            <AdminSidebar />
+          </Suspense>
+          <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+        </div>
         <SiteFooter lang={lang} />
         <Suspense fallback={null}>
           <Analytics lang={lang} />
