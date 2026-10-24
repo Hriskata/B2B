@@ -1,0 +1,72 @@
+# The SAME file runs the test server (staging) and the official site
+# (production). They differ only by the env file and the project name, so they
+# never share a database, a volume, a port, a key or a mailbox:
+#
+#   test server:  docker compose -p b2b-staging    -f docker-compose.server.yml --env-file .env.staging    up -d --build
+#   official:     docker compose -p b2b-production -f docker-compose.server.yml --env-file .env.production up -d --build
+#
+# Before each start run:  npm run check:env -- --kind <staging|production> --file <env file> --other <the other env file>
+#
+# Nothing here is reachable from the internet by itself: the database has no
+# published port, and the app listens on 127.0.0.1 only. A reverse proxy on the
+# server (Caddy, nginx, ...) terminates https and forwards to APP_PORT. See
+# docs/ENVIRONMENTS.md. For local work use docker-compose.yml instead.
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-b2b}
+      POSTGRES_USER: ${POSTGRES_USER:-b2b}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the env file}
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # Applies database migrations, then exits. Built from the build stage because
+  # it needs drizzle-kit (a dev dependency).
+  migrate:
+    build:
+      context: .
+      target: build
+    command: ["npm", "run", "db:migrate"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-b2b}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-b2b}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-b2b}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-b2b}
+      APP_URL: ${APP_URL:?Set APP_URL in the env file}
+      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY:?Set TOTP_ENCRYPTION_KEY in the env file}
+      SMTP_HOST: ${SMTP_HOST:?Set SMTP_HOST in the env file}
+      SMTP_PORT: ${SMTP_PORT:?Set SMTP_PORT in the env file}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:?Set MAIL_FROM in the env file}
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:?Set TURNSTILE_SITE_KEY in the env file}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:?Set TURNSTILE_SECRET_KEY in the env file}
+      TRUSTED_PROXY_COUNT: ${TRUSTED_PROXY_COUNT:-1}
+      # Always off on a server; the app refuses to start with it on anyway.
+      ADMIN_2FA_DISABLED: "false"
+      GA_MEASUREMENT_ID: ${GA_MEASUREMENT_ID:-}
+    ports:
+      # Only the reverse proxy on this machine can reach the app.
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  db-data:

@@ -2,7 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # main = the official site, develop = the test server (docs/ENVIRONMENTS.md)
+    branches: [main, develop]
   pull_request:
 
 permissions:
@@ -39,3 +40,14 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # The server compose file must stay valid (dummy values, nothing is started).
+      - run: docker compose -p ci -f docker-compose.server.yml config -q
+        env:
+          POSTGRES_PASSWORD: ci-only
+          APP_URL: https://ci.invalid
+          TOTP_ENCRYPTION_KEY: ci-only
+          SMTP_HOST: smtp.invalid
+          SMTP_PORT: "587"
+          MAIL_FROM: ci@ci.invalid
+          TURNSTILE_SITE_KEY: ci
+          TURNSTILE_SECRET_KEY: ci

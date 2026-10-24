@@ -15,7 +15,8 @@
     "db:seed": "tsx --env-file=.env scripts/seed.ts",
     "db:cleanup": "tsx --env-file=.env scripts/cleanup.ts",
     "db:import-products": "tsx --env-file=.env scripts/import-products.ts",
-    "check:guest-prices": "tsx scripts/check-guest-prices.ts"
+    "check:guest-prices": "tsx scripts/check-guest-prices.ts",
+    "check:env": "tsx scripts/check-env.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.1",
