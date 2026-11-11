@@ -35,10 +35,10 @@ export type RegisterInput = {
 };
 
 // Status once the email is confirmed (also restored by unblocking). A
-// profile is approved without a person only when the register confirmed an
-// active Bulgarian company; all others (foreign companies, decided
-// 10.11.2026, and Bulgarian ones the register did not confirm) wait for an
-// admin. The fact is stored on the profile (needsReview), not derived.
+// profile is approved without a person only when the register found the
+// Bulgarian company (active, or inactive with a flag, decided 11.11.2026); all
+// others (foreign companies, decided 10.11.2026, and Bulgarian ones the
+// register did not confirm) wait for an admin. The fact is stored on the profile (needsReview), not derived.
 export function statusAfterEmailConfirmed(review: {
   needsReview: boolean;
   approvedAt: Date | null;
@@ -68,8 +68,10 @@ function isRealAnswer(check: CompanyCheck): boolean {
 
 // Order as in CLAUDE.md: the form, then the company check, and only then the
 // verification email. A company the register does not know is refused with a
-// clear message; every other answer than "active" (inactive, unknown status,
-// register not answering) sends the profile to manual review.
+// clear message. An active company, and an inactive one (decided 11.11.2026:
+// it registers; admins see a flag and decide on its inquiries), are approved
+// without a person; every other answer (unknown status, register not
+// answering, foreign company) sends the profile to manual review.
 //
 // Apart from "company_not_found" (which depends only on the company number)
 // the caller shows the same message whatever happens here, so that the
@@ -87,7 +89,7 @@ export async function registerCustomer(
   // above, which also protects the register's daily request limit.
   const check = input.country === "BG" ? await checkCompany(input.companyNumber) : null;
   if (check?.kind === "not_found") return "company_not_found";
-  const needsReview = check?.kind !== "active";
+  const needsReview = !(check?.kind === "active" || check?.kind === "inactive");
 
   // Hash even when the email exists, so timing does not give it away.
   const passwordHash = await hashPassword(input.password);

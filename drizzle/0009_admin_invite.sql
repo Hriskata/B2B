@@ -1,0 +1,1 @@
+ALTER TYPE "public"."email_token_purpose" ADD VALUE 'admin_invite';

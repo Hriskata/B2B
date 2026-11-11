@@ -10,6 +10,7 @@ import { createSession, revokeAllSessions } from "./session";
 import {
   consumeEmailToken,
   createEmailToken,
+  deleteUnusedTokens,
   TOKEN_TTL_SECONDS,
   usableTokenSubject,
 } from "./tokens";
@@ -100,6 +101,8 @@ export async function resetAdminPassword(token: string, password: string): Promi
       .update(tables.admins)
       .set({ passwordHash, passwordMustChange: false })
       .where(eq(tables.admins.id, adminId));
+    // An invite link still waiting must not set another password later.
+    await deleteUnusedTokens("admin_invite", "admin", adminId, tx);
     await revokeAllSessions("admin", adminId);
     return true;
   });

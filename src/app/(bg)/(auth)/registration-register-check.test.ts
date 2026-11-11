@@ -71,8 +71,21 @@ describeDb("registration and the company register", () => {
     expect(sentMails).toHaveLength(0);
   });
 
+  it("an inactive company registers without a review and is flagged for the admins", async () => {
+    await createAdmin();
+    companyRegister.answers.set("123456789", { found: true, status: "INACTIVE", name: "Тест ЕООД" });
+
+    const { to, user, company } = await registerAndConfirm();
+
+    expect(to).toBe("/login?notice=email-verified");
+    expect(user).toMatchObject({ status: "active", needsReview: false });
+    expect(company).toMatchObject({ registryState: "inactive", registryStatus: "INACTIVE" });
+    expect(sentMails.map((m) => m.subject)).not.toContain("Нова регистрация чака преглед");
+    const { listCustomers } = await import("@/lib/admin/accounts");
+    expect((await listCustomers())[0].registryState).toBe("inactive");
+  });
+
   it.each([
-    ["an inactive company", { found: true, status: "INACTIVE", name: "Тест ЕООД" } as const, "inactive"],
     ["an unknown status code", { found: true, status: "Z", name: "Тест ЕООД" } as const, "unknown"],
     ["a register that does not answer", "fail" as const, "unavailable"],
   ])("%s goes to manual review, and the admins are told", async (_name, answer, state) => {
@@ -140,9 +153,9 @@ describeDb("registration and the company register", () => {
     expect(company.registryState).toBe("not_confirmed");
   });
 
-  it("registering again while unverified adds a review when the company is no longer active", async () => {
+  it("registering again while unverified adds a review when the company is no longer confirmed", async () => {
     await register();
-    companyRegister.answers.set("123456789", { found: true, status: "INACTIVE", name: "Тест ЕООД" });
+    companyRegister.answers.set("123456789", { found: true, status: "Z", name: "Тест ЕООД" });
     await getDb().delete(tables.companyCheckCache);
     await register();
 

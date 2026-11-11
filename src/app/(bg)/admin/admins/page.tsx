@@ -4,6 +4,7 @@ import { listAdmins } from "@/lib/admin/admins";
 import { requireAdmin } from "@/lib/auth/current";
 import { can } from "@/lib/permissions";
 import { AddAdminForm } from "./add-admin-form";
+import { resendAdminInviteAction } from "../manage-actions";
 import { ResetTwoFactorForm } from "./reset-form";
 
 export const metadata: Metadata = { title: "Админи" };
@@ -24,13 +25,14 @@ export default function AdminAdminsPage() {
   );
 }
 
-// New admins are added here (role "Преглед и редакция" only) with a default
-// password that must be changed at the first login; the admin:create script
-// still works too.
+// New admins are added here (role "Преглед и редакция" only): they get an
+// emailed link to set their own password, which can be sent again while they
+// have none. The admin:create script still works too.
 async function Content() {
   const me = await requireAdmin();
   const admins = await listAdmins();
   const canReset = can(me.role, "reset_admin_2fa");
+  const canManage = can(me.role, "manage_admins");
   return (
     <div className="flex flex-col gap-8">
       {can(me.role, "manage_admins") && (
@@ -58,8 +60,16 @@ async function Content() {
                 {ROLE_LABEL[a.role]} ·{" "}
                 {a.status === "active" ? "Активен" : "Блокиран"} · 2FA:{" "}
                 {a.totpEnabledAt ? "включена" : "не е настроена"}
-                {a.passwordMustChange && " · чака смяна на временната парола"}
+                {a.passwordMustChange && " · още не е задал собствена парола"}
               </p>
+              {canManage && a.passwordMustChange && a.status === "active" && (
+                <form action={resendAdminInviteAction} className="mt-2 text-sm">
+                  <input type="hidden" name="adminId" value={a.id} />
+                  <button type="submit" className="underline">
+                    Изпрати поканата отново
+                  </button>
+                </form>
+              )}
               {canReset && a.id !== me.id && (
                 <ResetTwoFactorForm targetId={a.id} targetEmail={a.email} />
               )}

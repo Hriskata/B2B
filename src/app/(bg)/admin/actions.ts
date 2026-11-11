@@ -7,7 +7,7 @@ import {
   emailForAdminResetToken,
   resetAdminPassword,
 } from "@/lib/auth/admin";
-import { changeAdminPassword } from "@/lib/admin/admins";
+import { acceptAdminInvite, changeAdminPassword, emailForAdminInviteToken } from "@/lib/admin/admins";
 import { getCurrentAdmin, requireAdminSession } from "@/lib/auth/current";
 import { createSession, destroySession } from "@/lib/auth/session";
 import { completeTotpSetup, verifySecondFactor } from "@/lib/auth/totp";
@@ -156,4 +156,31 @@ export async function adminResetPasswordAction(
   }
   // Login still requires the second factor.
   redirect("/admin/login?notice=password-reset");
+}
+
+// A new admin sets their own password from the invite link. Same checks as
+// the reset; then the admin logs in and sets up 2FA.
+export async function adminAcceptInviteAction(
+  prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  if (!(await hit(`reset-submit:admin:ip:${await getClientIp()}`, LIMITS.resetSubmitPerIp))) {
+    return failure(prev, MESSAGES.rateLimited);
+  }
+  const token = field(formData, "token");
+  const password = field(formData, "password");
+  const email = await emailForAdminInviteToken(token);
+  const check = validatePassword(password, email ? { email } : undefined);
+  if (!check.ok) {
+    return failure(prev, MESSAGES.invalidInput, { fieldErrors: { password: check.message } });
+  }
+  if (password !== field(formData, "confirm")) {
+    return failure(prev, MESSAGES.invalidInput, {
+      fieldErrors: { confirm: "Паролите не съвпадат." },
+    });
+  }
+  if (!(await acceptAdminInvite(token, password))) {
+    return failure(prev, "Връзката е невалидна или е изтекла. Помолете друг администратор за нова покана.");
+  }
+  redirect("/admin/login?notice=invite-accepted");
 }

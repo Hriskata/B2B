@@ -14,6 +14,7 @@ export type AuditAction =
   | "company.unblock"
   | "admin.2fa_reset"
   | "admin.create"
+  | "admin.invite_resend"
   | "admin.password_change"
   | "registration.approve"
   | "registration.reject";

@@ -69,6 +69,13 @@ async function Content() {
                     Фирмата е блокирана
                   </strong>
                 )}
+                {/* Decided 11.11.2026: an inactive company can register; admins
+                    decide on its inquiries. */}
+                {c.registryState === "inactive" && (
+                  <strong className="ml-2 text-ember-300">
+                    Неактивна в регистъра{c.registryStatus ? ` (код ${c.registryStatus})` : ""}
+                  </strong>
+                )}
               </p>
             </div>
             {canBlock && (

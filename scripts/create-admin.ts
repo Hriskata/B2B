@@ -1,5 +1,5 @@
-// Creates an admin account from the terminal (phase 1; inviting admins from
-// the admin panel is an open decision and comes later).
+// Creates an admin account from the terminal (the first admins, or when no
+// admin can log in). From the admin panel, new admins get an invite link.
 //
 //   npm run admin:create -- --email someone@example.com --role editor
 //

@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { createAdminAccount, DEFAULT_ADMIN_PASSWORD, resetAdminTwoFactor } from "@/lib/admin/admins";
+import { createAdminAccount, resendAdminInvite, resetAdminTwoFactor } from "@/lib/admin/admins";
 import { setCompanyBlocked, setUserBlocked } from "@/lib/admin/accounts";
 import { REVIEW_NOTICE_COOKIE, reviewRegistration } from "@/lib/admin/registrations";
 import { createProduct, updateProduct } from "@/lib/admin/products";
@@ -213,8 +213,8 @@ export async function reviewRegistrationAction(formData: FormData): Promise<void
   redirect("/admin/registrations");
 }
 
-// Adds an admin with the default password; the new admin must change it at
-// the first login. Only roles with "manage_admins".
+// Adds an admin who gets an emailed link to set their own password. Only
+// roles with "manage_admins", with the editor's password and 2FA code again.
 export async function createAdminAction(prev: FormState, formData: FormData): Promise<FormState> {
   const auth = await authorize("manage_admins");
   if (!auth.ok) return failure(prev, NO_PERMISSION);
@@ -250,8 +250,19 @@ export async function createAdminAction(prev: FormState, formData: FormData): Pr
   refresh(); // the admins list shows the new admin
   return success(
     prev,
-    `Администраторът ${email.data} е добавен. Временна парола: ${DEFAULT_ADMIN_PASSWORD}. Съобщете му я лично (не по имейл); при първия вход ще настрои 2FA и ще трябва да я смени.`,
+    result.mailed
+      ? `Администраторът ${email.data} е добавен и получи имейл с връзка за задаване на парола (важи 72 часа). При първия вход ще настрои 2FA.`
+      : `Администраторът ${email.data} е добавен, но имейлът с поканата НЕ беше изпратен. Изпратете поканата отново от списъка по-долу.`,
   );
+}
+
+// A new invite link for an admin who has not set a password yet. Only roles
+// with "manage_admins"; the link goes only to that admin's own email.
+export async function resendAdminInviteAction(formData: FormData): Promise<void> {
+  const auth = await authorize("manage_admins");
+  if (!auth.ok) return;
+  await resendAdminInvite({ id: auth.admin.id, email: auth.admin.email }, field(formData, "adminId"));
+  refresh();
 }
 
 export async function resetAdminTwoFactorAction(

@@ -61,17 +61,20 @@ export function resetPasswordMail(
   };
 }
 
-export function adminAddedMail(to: string, addedBy: string): Mail {
+// Invite of a new admin (decided 11.11.2026): a one-time link to set their
+// own password; no password is ever sent or shown.
+export function adminInviteMail(to: string, addedBy: string, token: string, hours: number): Mail {
   return {
     to,
-    subject: "Добавени сте като администратор",
+    subject: "Покана за администратор",
     text: [
       "Здравейте,",
       "",
-      `${addedBy} ви добави като администратор.`,
-      `Вход: ${getEnv().APP_URL.replace(/\/$/, "")}/admin/login`,
-      "Временната парола ще ви бъде съобщена от този, който ви е добавил (не се изпраща по имейл).",
-      "При първия вход ще настроите двуфакторна автентикация и ще трябва веднага да смените паролата.",
+      `${addedBy} ви добави като администратор. За да зададете парола, отворете връзката:`,
+      link("/admin/invite", token),
+      "",
+      `Връзката важи ${hours} часа и може да се ползва само веднъж.`,
+      "След това влезте и настройте двуфакторна автентикация.",
       "",
       "Ако не очаквате това, свържете се с останалите администратори.",
     ].join("\n"),

@@ -154,7 +154,7 @@ export function ProductForm({
       />
       <Field
         name="price"
-        label="Цена за бройка (евро)"
+        label="Цена за бройка (евро, с ДДС)"
         defaultValue={initial.price}
         disabled={!canEdit}
         inputMode="text"

@@ -38,7 +38,7 @@ async function Content() {
             <tr className="border-b border-line">
               <th className="py-2 pr-3">Име</th>
               <th className="py-2 pr-3">Адрес</th>
-              <th className="py-2 pr-3">Цена за бройка</th>
+              <th className="py-2 pr-3">Цена за бройка (с ДДС)</th>
               <th className="py-2 pr-3">Статус</th>
               <th className="py-2" />
             </tr>

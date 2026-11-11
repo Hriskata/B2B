@@ -127,3 +127,10 @@ describe("series summary", () => {
     expect(getDict("en").seriesPage.summary(1, null, "")).not.toMatch(/Infinity/);
   });
 });
+
+describe("decided texts", () => {
+  it("no page promises a minimum order (decided 11.11.2026: there is none)", () => {
+    const all = JSON.stringify([getDict("bg"), getDict("en")]);
+    expect(all).not.toMatch(/3 бро|3 бр\.|3 units|Минимална поръчка|Minimum order/i);
+  });
+});

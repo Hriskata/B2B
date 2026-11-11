@@ -3,15 +3,36 @@ import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import { getDb, tables, type Db } from "@/db";
 import { hashToken, randomToken } from "../crypto";
 
-export type TokenPurpose = "verify_email" | "reset_password";
+export type TokenPurpose = "verify_email" | "reset_password" | "admin_invite";
 export type TokenSubject = "user" | "admin";
 
 export const TOKEN_TTL_SECONDS: Record<TokenPurpose, number> = {
   verify_email: 24 * 60 * 60,
   reset_password: 60 * 60, // proposal in the checklist: up to 60 minutes
+  admin_invite: 72 * 60 * 60, // proposal: 3 days to accept an admin invite
 };
 
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
+
+// Makes every unused link of one kind for an account stop working (e.g. an
+// admin invite once the admin has set a password some other way).
+export async function deleteUnusedTokens(
+  purpose: TokenPurpose,
+  subjectType: TokenSubject,
+  subjectId: string,
+  db: Db | Tx = getDb(),
+): Promise<void> {
+  await db
+    .delete(tables.emailTokens)
+    .where(
+      and(
+        eq(tables.emailTokens.purpose, purpose),
+        eq(tables.emailTokens.subjectType, subjectType),
+        eq(tables.emailTokens.subjectId, subjectId),
+        isNull(tables.emailTokens.usedAt),
+      ),
+    );
+}
 
 // Replaces any earlier unused token of the same kind for this account, so
 // only the newest link works. Returns the raw token (sent by email, never

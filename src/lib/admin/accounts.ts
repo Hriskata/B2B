@@ -17,6 +17,8 @@ export type CustomerCompany = {
   id: string;
   country: string;
   companyNumber: string;
+  registryState: string | null;
+  registryStatus: string | null;
   name: string;
   blockedAt: Date | null;
   users: CustomerUser[];
@@ -30,6 +32,8 @@ export async function listCustomers(): Promise<CustomerCompany[]> {
     id: c.id,
     country: c.country,
     companyNumber: c.companyNumber,
+    registryState: c.registryState,
+    registryStatus: c.registryStatus,
     name: c.name,
     blockedAt: c.blockedAt,
     users: users
