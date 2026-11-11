@@ -126,6 +126,24 @@ describe("US: EIN", () => {
   it.each(["", "12-345678", "1234567890", "12-34567AB", "123-45-6789X"])("rejects %j", (v) => {
     expect(rejected("US", v)).toBe(true);
   });
+
+  it("refuses an SSN typed in its own layout XXX-XX-XXXX", () => {
+    expect(rejected("US", "123-45-6789")).toBe(true);
+    expect(ok("US", " 12 - 3456789 ")).toBe("123456789");
+  });
+});
+
+describe("field length in the browser", () => {
+  it("leaves room for a valid number written with separators and a prefix", () => {
+    for (const [country, input] of [
+      ["BG", "BG 123 456 789 0123"],
+      ["US", "12 - 3456789"],
+      ["NL", "NL 1234.5678.9B01"],
+    ]) {
+      expect(input.length, country).toBeLessThanOrEqual(ruleFor(country).maxLength);
+      expect(parseCompanyNumber(country, input).ok, country).toBe(true);
+    }
+  });
 });
 
 describe("other countries: register number", () => {

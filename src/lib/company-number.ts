@@ -111,7 +111,8 @@ export type CompanyNumberRule = {
 
 export function ruleFor(country: string): CompanyNumberRule {
   if (country === "BG") {
-    return { kind: "eik", label: "ЕИК", hint: "9 или 13 цифри.", maxLength: 15 };
+    // Room for separators and a BG prefix; the server checks the real length.
+    return { kind: "eik", label: "ЕИК", hint: "9 или 13 цифри.", maxLength: 24 };
   }
   const eu = EU_VAT[country];
   if (eu) {
@@ -119,7 +120,7 @@ export function ruleFor(country: string): CompanyNumberRule {
       kind: "vat",
       label: "ДДС номер",
       hint: `${eu.hint}. Кодът на държавата (${eu.prefix}) може да не се въвежда.`,
-      maxLength: 20,
+      maxLength: 30,
     };
   }
   if (country === "US") {
@@ -127,7 +128,7 @@ export function ruleFor(country: string): CompanyNumberRule {
       kind: "ein",
       label: "EIN (Employer Identification Number)",
       hint: "9 цифри във формат XX-XXXXXXX.",
-      maxLength: 10,
+      maxLength: 14,
     };
   }
   return {
@@ -184,7 +185,10 @@ export function parseCompanyNumber(country: string, input: string): ParseResult 
       return body ? { ok: true, value: eu.prefix + body } : wrong;
     }
     case "ein":
-      return /^\d{9}$/.test(value) ? { ok: true, value } : wrong;
+      // Checked on the raw input: an SSN typed as XXX-XX-XXXX is refused
+      // (personal numbers are not collected). Nine bare digits cannot be told
+      // apart from an SSN.
+      return /^\s*\d{2}\s*-?\s*\d{7}\s*$/.test(input) ? { ok: true, value } : wrong;
     case "registration":
       return /^[A-Z0-9]{2,30}$/.test(value) ? { ok: true, value } : wrong;
   }
