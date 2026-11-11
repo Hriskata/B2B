@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { listPendingRegistrations } from "@/lib/admin/registrations";
+import { cookies } from "next/headers";
+import { listPendingRegistrations, REVIEW_NOTICE_COOKIE } from "@/lib/admin/registrations";
 import { requireAdmin } from "@/lib/auth/current";
 import { countryName, formatCompanyNumber, ruleFor } from "@/lib/company-number";
 import { can } from "@/lib/permissions";
@@ -41,18 +42,24 @@ function registryText(r: {
   }
 }
 
-const NOTICES: Record<string, string> = {
-  approve: "Регистрацията е одобрена. Клиентът е уведомен по имейл.",
-  reject: "Регистрацията е отхвърлена. Клиентът е уведомен по имейл.",
-  "already-decided":
+const NOTICES = new Map<string, string>([
+  ["approve", "Регистрацията е одобрена. Клиентът е уведомен по имейл."],
+  ["reject", "Регистрацията е отхвърлена. Клиентът е уведомен по имейл."],
+  [
+    "approve-mail-failed",
+    "Регистрацията е одобрена, но имейлът до клиента НЕ беше изпратен. Свържете се с клиента.",
+  ],
+  [
+    "reject-mail-failed",
+    "Регистрацията е отхвърлена, но имейлът до клиента НЕ беше изпратен. Свържете се с клиента.",
+  ],
+  [
+    "already-decided",
     "Регистрацията вече е решена от друг администратор (или не съществува). Важи първото решение; вашето не е приложено.",
-};
+  ],
+]);
 
-export default function AdminRegistrationsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ notice?: string }>;
-}) {
+export default function AdminRegistrationsPage() {
   return (
     <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 py-8">
       <h1 className="mb-2">Чакащи регистрации</h1>
@@ -62,17 +69,19 @@ export default function AdminRegistrationsPage({
         получава имейл, а решението се записва в журнала.
       </p>
       <Suspense>
-        <Notice searchParams={searchParams} />
+        <Notice />
         <Content />
       </Suspense>
     </main>
   );
 }
 
-async function Notice({ searchParams }: { searchParams: Promise<{ notice?: string }> }) {
-  const { notice } = await searchParams;
-  // Own keys only: "constructor" or "__proto__" in the address must not match.
-  const text = notice && Object.hasOwn(NOTICES, notice) ? NOTICES[notice] : undefined;
+// The outcome of this admin's last decision, from the short-lived cookie the
+// action set (it expires after 30 seconds).
+async function Notice() {
+  await requireAdmin();
+  const notice = (await cookies()).get(REVIEW_NOTICE_COOKIE)?.value;
+  const text = notice ? NOTICES.get(notice) : undefined;
   if (!text) return null;
   return (
     <p role="status" className="mb-6 rounded-sm border border-line bg-card px-3 py-2">

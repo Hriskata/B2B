@@ -81,13 +81,17 @@ export async function notifyAdminsOfPendingRegistration(userId: string): Promise
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
+// Short-lived cookie with the outcome of the last decision, shown once on the
+// review page (set by the action, never taken from the address).
+export const REVIEW_NOTICE_COOKIE = "b2b_review_notice";
+
 // Only a registration that still waits can be decided, once. The customer is
 // told by email after the change is saved.
 export async function reviewRegistration(
   actor: Actor,
   userId: string,
   decision: "approve" | "reject",
-): Promise<"ok" | "not_found"> {
+): Promise<"ok" | "mail_failed" | "not_found"> {
   if (!UUID.test(userId)) return "not_found";
   const approve = decision === "approve";
   const now = new Date();
@@ -122,8 +126,9 @@ export async function reviewRegistration(
     return user;
   });
   if (!reviewed) return "not_found";
-  await sendMail(
+  // The decision stands either way; the admin is told if the mail did not go.
+  const sent = await sendMail(
     approve ? registrationApprovedMail(reviewed.email) : registrationRejectedMail(reviewed.email),
   );
-  return "ok";
+  return sent ? "ok" : "mail_failed";
 }
