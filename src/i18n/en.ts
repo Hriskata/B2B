@@ -37,7 +37,7 @@ export const en: Dict = {
     loginAfter: " to see the price.",
     error: "The price could not be loaded.",
     loading: "Price: …",
-    perUnit: "Price per unit:",
+    perUnit: "Price per unit (incl. VAT):",
     negotiable: "The price is confirmed on request.",
     note: "The price is for a single unit and is agreed through an inquiry. Minimum order: 3 units.",
   },
@@ -225,7 +225,7 @@ export const en: Dict = {
     items: {
       who: ["Who can register?", "Bulgarian companies only. Registration asks for the company name, company ID (EIK), email and a password."],
       prices: ["Are prices visible without registering?", "No. The catalogue is open to everyone, but prices are visible only after you log in."],
-      buy: ["How do I buy?", "There is no cart or payment on the site. You send an inquiry and the price is agreed. The minimum order is 3 units."],
+      buy: ["How do I buy?", "There is no cart or payment on the site. You send an inquiry and the price is agreed."],
       pay: ["How do I pay?", "By bank transfer outside the site, once the price is agreed."],
       users: ["Can several people from one company have an account?", "Yes. One company can have several accounts."],
       delivery: ["What are the delivery time and cost?"],
