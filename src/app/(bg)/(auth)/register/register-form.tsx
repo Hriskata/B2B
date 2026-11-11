@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useActionState, useRef, useState, useTransition } from "react";
+import {
+  startTransition,
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { Field, FormMessage } from "@/components/form-parts";
 import { Turnstile } from "@/components/turnstile";
 import { DEFAULT_COUNTRY, ruleFor, type CountryOption } from "@/lib/company-number";
@@ -28,12 +35,22 @@ export function RegisterForm({
   const [checking, startChecking] = useTransition();
   const [seenNonce, setSeenNonce] = useState(state.nonce);
   const formRef = useRef<HTMLFormElement>(null);
+  // Grows when the step changes by the user's action (0 on the first render).
+  const [stepChanges, setStepChanges] = useState(0);
+
+  // The button that was pressed disappears with its step: put the focus on
+  // the first field of the new step instead of losing it.
+  useEffect(() => {
+    if (stepChanges === 0) return;
+    document.getElementById(step === 1 ? "f-fullName" : "f-country")?.focus();
+  }, [stepChanges, step]);
 
   // The final submit can still fail on a step 1 field: show it on step 1.
   if (state.nonce !== seenNonce) {
     setSeenNonce(state.nonce);
     if (STEP_ONE_FIELDS.some((name) => state.fieldErrors?.[name])) {
       setStepOneState(state);
+      setStepChanges((n) => n + 1);
       setStep(1);
     }
   }
@@ -50,7 +67,10 @@ export function RegisterForm({
     startChecking(async () => {
       const result = await checkRegisterStepOneAction(stepOneState, data);
       setStepOneState(result);
-      if (result.status === "success") setStep(2);
+      if (result.status === "success") {
+        setStepChanges((n) => n + 1);
+        setStep(2);
+      }
     });
   }
 
@@ -68,7 +88,8 @@ export function RegisterForm({
 
   return (
     <form ref={formRef} onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-      <p className="text-sm text-secondary">
+      {/* Announced by screen readers when the step changes. */}
+      <p className="text-sm text-secondary" aria-live="polite">
         {step === 1 ? "Стъпка 1 от 2: вашите данни" : "Стъпка 2 от 2: данни за фирмата"}
       </p>
 
@@ -124,6 +145,7 @@ export function RegisterForm({
             onChange={(e) => setCountry(e.target.value)}
             autoComplete="country"
             aria-invalid={state.fieldErrors?.country ? true : undefined}
+            aria-describedby={state.fieldErrors?.country ? "f-country-error" : undefined}
             className="input"
           >
             {countries.map((c) => (
@@ -133,7 +155,7 @@ export function RegisterForm({
             ))}
           </select>
           {state.fieldErrors?.country && (
-            <p role="alert" className="text-sm text-ember-300">
+            <p id="f-country-error" role="alert" className="text-sm text-ember-300">
               {state.fieldErrors.country}
             </p>
           )}
@@ -157,7 +179,14 @@ export function RegisterForm({
         />
         {step === 2 && <Turnstile siteKey={siteKey} resetKey={state.nonce} />}
         <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={() => setStep(1)} className="btn btn-secondary">
+          <button
+            type="button"
+            onClick={() => {
+              setStepChanges((n) => n + 1);
+              setStep(1);
+            }}
+            className="btn btn-secondary"
+          >
             Назад
           </button>
           <button type="submit" disabled={registering} className="btn btn-primary">
