@@ -12,10 +12,11 @@ import { checkMigrations, LAST_PRELAUNCH_MIGRATION, type Finding } from "../src/
 
 const dir = path.join(process.cwd(), "drizzle");
 const journal = JSON.parse(readFileSync(path.join(dir, "meta", "_journal.json"), "utf8")) as {
-  entries: { tag: string }[];
+  entries: { tag: string; when: number }[];
 };
-const migrations = journal.entries.map(({ tag }) => ({
+const migrations = journal.entries.map(({ tag, when }) => ({
   tag,
+  when,
   sql: readFileSync(path.join(dir, `${tag}.sql`), "utf8"),
 }));
 
