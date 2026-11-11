@@ -93,3 +93,48 @@ export function twoFactorResetMail(to: string, resetBy: string): Mail {
     ].join("\n"),
   };
 }
+
+// Manual review (phase 2). DRAFT texts, like the rest of this file.
+
+// Only the country (from our own list) is in the mail. The company name and
+// email are typed by the customer and could carry a link or fake text inside
+// a mail from our own sender; the admin sees them in the portal.
+export function registrationPendingAdminMail(to: string, country: string): Mail {
+  return {
+    to,
+    subject: "Нова регистрация чака преглед",
+    text: [
+      "Здравейте,",
+      "",
+      `Нова регистрация на фирма от държава ${country} чака ръчен преглед.`,
+      "",
+      `Преглед: ${getEnv().APP_URL.replace(/\/$/, "")}/admin/registrations`,
+    ].join("\n"),
+  };
+}
+
+export function registrationApprovedMail(to: string): Mail {
+  return {
+    to,
+    subject: "Регистрацията ви е одобрена",
+    text: [
+      "Здравейте,",
+      "",
+      "Регистрацията на вашата фирма е одобрена. Вече можете да влезете и да виждате цените:",
+      `${getEnv().APP_URL.replace(/\/$/, "")}/login`,
+    ].join("\n"),
+  };
+}
+
+export function registrationRejectedMail(to: string): Mail {
+  return {
+    to,
+    subject: "Регистрацията ви не е одобрена",
+    text: [
+      "Здравейте,",
+      "",
+      "За съжаление не можем да одобрим регистрацията на вашата фирма.",
+      "Ако смятате, че това е грешка, свържете се с нас.",
+    ].join("\n"),
+  };
+}

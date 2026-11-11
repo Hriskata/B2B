@@ -16,16 +16,18 @@ export const fullNameSchema = z
   .trim()
   .min(2, "Въведете име и фамилия.")
   .max(120, "Името е твърде дълго.")
-  // No control characters (also blocks line breaks that could end up in mail).
-  .refine((v) => !/[\p{Cc}]/u.test(v), "Името съдържа невалидни знаци.");
+  // No control, format (e.g. bidi overrides) or line/paragraph separator
+  // characters: they could break lines or hide text in mail and in the admin.
+  .refine((v) => !/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u.test(v), "Името съдържа невалидни знаци.");
 
 export const companyNameSchema = z
   .string()
   .trim()
   .min(2, "Въведете името на фирмата.")
   .max(200, "Името на фирмата е твърде дълго.")
-  // No control characters (also blocks line breaks that could end up in mail).
-  .refine((v) => !/[\p{Cc}]/u.test(v), "Името съдържа невалидни знаци.");
+  // No control, format (e.g. bidi overrides) or line/paragraph separator
+  // characters: they could break lines or hide text in mail and in the admin.
+  .refine((v) => !/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u.test(v), "Името съдържа невалидни знаци.");
 
 export const passwordFieldSchema = z.string().max(128, "Паролата е твърде дълга.");
 

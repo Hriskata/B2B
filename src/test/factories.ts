@@ -17,7 +17,7 @@ export async function createUser(
   overrides: Partial<{
     email: string;
     password: string;
-    status: "unverified" | "active" | "blocked" | "pending_review";
+    status: "unverified" | "active" | "blocked" | "pending_review" | "rejected";
     country: string;
     companyNumber: string;
     fullName: string;

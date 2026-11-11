@@ -12,7 +12,8 @@ export type Permission =
   | "edit_catalog" // create/edit products and prices
   | "block_accounts" // block/unblock customers and companies
   | "reset_admin_2fa" // reset another admin's 2FA
-  | "manage_admins"; // add a new admin
+  | "manage_admins" // add a new admin
+  | "review_registrations"; // approve or reject a registration waiting for review
 
 const GRANTS: Record<AdminRole, readonly Permission[]> = {
   viewer: ["view"],
@@ -22,6 +23,7 @@ const GRANTS: Record<AdminRole, readonly Permission[]> = {
     "block_accounts",
     "reset_admin_2fa",
     "manage_admins",
+    "review_registrations",
   ],
 };
 

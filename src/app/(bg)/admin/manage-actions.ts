@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createAdminAccount, DEFAULT_ADMIN_PASSWORD, resetAdminTwoFactor } from "@/lib/admin/admins";
 import { setCompanyBlocked, setUserBlocked } from "@/lib/admin/accounts";
+import { reviewRegistration } from "@/lib/admin/registrations";
 import { createProduct, updateProduct } from "@/lib/admin/products";
 import { authorize } from "@/lib/auth/current";
 import { isValidSlug } from "@/lib/catalog";
@@ -179,6 +180,21 @@ export async function setCompanyBlockedAction(formData: FormData): Promise<void>
     { id: auth.admin.id, email: auth.admin.email },
     field(formData, "companyId"),
     formData.get("blocked") === "true",
+  );
+  refresh();
+}
+
+// Approves or rejects a registration waiting for manual review. The customer
+// is told by email; the decision goes to the journal.
+export async function reviewRegistrationAction(formData: FormData): Promise<void> {
+  const auth = await authorize("review_registrations");
+  if (!auth.ok) return;
+  const decision = field(formData, "decision");
+  if (decision !== "approve" && decision !== "reject") return;
+  await reviewRegistration(
+    { id: auth.admin.id, email: auth.admin.email },
+    field(formData, "userId"),
+    decision,
   );
   refresh();
 }

@@ -16,6 +16,7 @@ const STATUS_LABEL = {
   active: "Активен",
   blocked: "Блокиран",
   pending_review: "Чака одобрение",
+  rejected: "Отхвърлена регистрация",
 } as const;
 
 export default function AdminCustomersPage() {

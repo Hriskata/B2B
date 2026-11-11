@@ -9,7 +9,7 @@ export type CustomerUser = {
   id: string;
   email: string;
   fullName: string | null;
-  status: "unverified" | "active" | "blocked" | "pending_review";
+  status: "unverified" | "active" | "blocked" | "pending_review" | "rejected";
   createdAt: Date;
 };
 
@@ -48,7 +48,7 @@ const UUID = /^[0-9a-f-]{36}$/i;
 
 // Blocking ends every session of the person at once; unblocking restores the
 // state they had: unverified without a confirmed email, otherwise active, or
-// pending review for a foreign company (see statusAfterEmailConfirmed).
+// pending review or rejected after a manual review (statusAfterEmailConfirmed).
 export async function setUserBlocked(
   actor: Actor,
   userId: string,
@@ -66,7 +66,7 @@ export async function setUserBlocked(
     if (!found) return "not_found" as const;
     const { user } = found;
     const unblocked = user.emailVerifiedAt
-      ? statusAfterEmailConfirmed(found.country)
+      ? statusAfterEmailConfirmed(found.country, user)
       : "unverified";
     await tx
       .update(tables.users)

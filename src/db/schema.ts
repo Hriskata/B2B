@@ -17,12 +17,15 @@ import {
 // a bug in customer code must not be able to turn a customer into an admin.
 
 // pending_review: email confirmed, waiting for an admin (foreign companies;
-// in phase 2 also registrations whose company check failed).
+// in phase 2 also registrations whose company check failed). rejected: an
+// admin turned the registration down. New values are only used by the code,
+// never in migration SQL (docs/ENVIRONMENTS.md, "Migrations", rule 4).
 export const userStatus = pgEnum("user_status", [
   "unverified",
   "active",
   "blocked",
   "pending_review",
+  "rejected",
 ]);
 export const adminRole = pgEnum("admin_role", ["viewer", "editor"]);
 export const adminStatus = pgEnum("admin_status", ["active", "blocked"]);
@@ -68,6 +71,9 @@ export const users = pgTable(
     passwordHash: text("password_hash").notNull(),
     status: userStatus().notNull().default("unverified"),
     emailVerifiedAt: timestamptz("email_verified_at"),
+    // Set by the manual review; unblocking returns to the reviewed state.
+    approvedAt: timestamptz("approved_at"),
+    rejectedAt: timestamptz("rejected_at"),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
   (t) => [index("users_company_id_idx").on(t.companyId)],
