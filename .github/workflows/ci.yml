@@ -38,6 +38,8 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - run: npm run typecheck
+      # Migrations must keep the previous code working (docs/ENVIRONMENTS.md).
+      - run: npm run check:migrations
       - run: npm test
       - run: npm run build
       # The server compose file must stay valid (dummy values, nothing is started).
