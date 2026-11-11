@@ -4,11 +4,13 @@ import { getCurrentAdmin } from "@/lib/auth/current";
 import { initialFormState } from "@/lib/form-state";
 import { verifyPassword } from "@/lib/password";
 import { codeFor, createAdmin, fd, PASSWORD } from "@/test/factories";
-import { sentMails, tokenFromMail } from "@/test/mail-capture";
+import { mailControl, sentMails, tokenFromMail } from "@/test/mail-capture";
 import { cookieJar, redirectedTo } from "@/test/next-mocks";
 import {
   adminAcceptInviteAction,
   adminChangePasswordAction,
+  adminForgotPasswordAction,
+  adminResetPasswordAction,
   adminLoginAction,
   adminVerifyAction,
 } from "./actions";
@@ -308,5 +310,70 @@ describeDb("invite link for a new admin", () => {
     const before = sentMails.length;
     await resendAdminInviteAction(fd({ adminId: editor.admin.id }));
     expect(sentMails).toHaveLength(before);
+  });
+
+  it("an invite link stops working once the admin set a password through forgot-password", async () => {
+    const { token } = await invite("nadia@firma.bg");
+    await adminForgotPasswordAction(
+      initialFormState,
+      fd({ email: "nadia@firma.bg", "cf-turnstile-response": "ok" }),
+    );
+    const resetToken = tokenFromMail(sentMails.at(-1)!);
+    await redirectedTo(() =>
+      adminResetPasswordAction(
+        initialFormState,
+        fd({ token: resetToken, password: "Moya-parola-7", confirm: "Moya-parola-7" }),
+      ),
+    );
+
+    expect((await accept(token, "Chuzhda-parola-7")).status).toBe("error");
+    const row = (await adminsInDb()).find((a) => a.email === "nadia@firma.bg")!;
+    expect(await verifyPassword(row.passwordHash, "Moya-parola-7")).toBe(true);
+  });
+
+  it("an invite cannot replace a chosen password or be used by a blocked admin (and the link is kept)", async () => {
+    const { token } = await invite("nadia@firma.bg");
+    await getDb().update(tables.admins).set({ status: "blocked" });
+
+    expect((await accept(token, "Nova-parola-9")).status).toBe("error");
+    // Not used up: it works once the admin is active again.
+    await getDb().update(tables.admins).set({ status: "active" });
+    expect(await redirectedTo(() => accept(token, "Nova-parola-9"))).toBe(
+      "/admin/login?notice=invite-accepted",
+    );
+  });
+
+  it("a reset link is not an invite link, and an invite link is not a reset link", async () => {
+    const { token: inviteToken } = await invite("nadia@firma.bg");
+    await adminForgotPasswordAction(
+      initialFormState,
+      fd({ email: "editor@firma.bg", "cf-turnstile-response": "ok" }),
+    );
+    const resetToken = tokenFromMail(sentMails.at(-1)!);
+
+    expect((await accept(resetToken, "Nova-parola-9")).status).toBe("error");
+    const asReset = await adminResetPasswordAction(
+      initialFormState,
+      fd({ token: inviteToken, password: "Nova-parola-9", confirm: "Nova-parola-9" }),
+    );
+    expect(asReset.status).toBe("error");
+  });
+
+  it("new invites for one admin are limited per hour", async () => {
+    await invite();
+    const created = (await adminsInDb()).find((a) => a.email === "new@firma.bg")!;
+    const before = sentMails.length;
+    for (let i = 0; i < 7; i++) await resendAdminInviteAction(fd({ adminId: created.id }));
+    expect(sentMails.length - before).toBe(5);
+  });
+
+  it("tells the editor when the invite mail did not go out", async () => {
+    const editor = await loginAs("editor@firma.bg", PASSWORD, { role: "editor" });
+    mailControl.fail = true;
+    const state = await createAdminAction(
+      initialFormState,
+      fd({ email: "new@firma.bg", role: "viewer", password: PASSWORD, code: await freshCode(editor.secret) }),
+    );
+    expect(state.message).toMatch(/НЕ беше изпратен/);
   });
 });

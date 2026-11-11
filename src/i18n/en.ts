@@ -39,7 +39,7 @@ export const en: Dict = {
     loading: "Price: …",
     perUnit: "Price per unit (incl. VAT):",
     negotiable: "The price is confirmed on request.",
-    note: "The price is for a single unit and is agreed through an inquiry. Minimum order: 3 units.",
+    note: "The price is for a single unit and is agreed through an inquiry.",
   },
   series: {
     hds: "HDS – High-Density Splice",
@@ -72,7 +72,7 @@ export const en: Dict = {
     title: "Products",
     metaDescription: "ODFFiber fiber optic panel catalogue: filter by series, connector, height and fiber count.",
     intro:
-      "Browse our products. Prices are visible after you log in, and buying works through an inquiry where the price is agreed. Minimum order: 3 units.",
+      "Browse our products. Prices are visible after you log in, and buying works through an inquiry where the price is agreed.",
     seriesNav: "Series",
     empty: "No products have been added yet.",
     shown: (shown: number, all: number) => `Showing ${shown} of ${all} models`,
@@ -134,7 +134,7 @@ export const en: Dict = {
     lead: "High-density optical distribution frames (ODF) for data centers.",
     browse: "Browse products",
     quote: "Request a quote",
-    note: "For businesses only. Prices are visible after you log in, and the quote is agreed through an inquiry. Minimum order: 3 units.",
+    note: "For businesses only. Prices are visible after you log in, and the quote is agreed through an inquiry.",
     stats: {
       models: "models in the catalogue",
       density: "fibers in 1RU (highest density)",

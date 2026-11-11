@@ -14,6 +14,26 @@ export const TOKEN_TTL_SECONDS: Record<TokenPurpose, number> = {
 
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
+// Makes every unused link of one kind for an account stop working (e.g. an
+// admin invite once the admin has set a password some other way).
+export async function deleteUnusedTokens(
+  purpose: TokenPurpose,
+  subjectType: TokenSubject,
+  subjectId: string,
+  db: Db | Tx = getDb(),
+): Promise<void> {
+  await db
+    .delete(tables.emailTokens)
+    .where(
+      and(
+        eq(tables.emailTokens.purpose, purpose),
+        eq(tables.emailTokens.subjectType, subjectType),
+        eq(tables.emailTokens.subjectId, subjectId),
+        isNull(tables.emailTokens.usedAt),
+      ),
+    );
+}
+
 // Replaces any earlier unused token of the same kind for this account, so
 // only the newest link works. Returns the raw token (sent by email, never
 // stored).

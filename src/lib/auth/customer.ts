@@ -35,10 +35,10 @@ export type RegisterInput = {
 };
 
 // Status once the email is confirmed (also restored by unblocking). A
-// profile is approved without a person only when the register confirmed an
-// active Bulgarian company; all others (foreign companies, decided
-// 10.11.2026, and Bulgarian ones the register did not confirm) wait for an
-// admin. The fact is stored on the profile (needsReview), not derived.
+// profile is approved without a person only when the register found the
+// Bulgarian company (active, or inactive with a flag, decided 11.11.2026); all
+// others (foreign companies, decided 10.11.2026, and Bulgarian ones the
+// register did not confirm) wait for an admin. The fact is stored on the profile (needsReview), not derived.
 export function statusAfterEmailConfirmed(review: {
   needsReview: boolean;
   approvedAt: Date | null;

@@ -213,8 +213,8 @@ export async function reviewRegistrationAction(formData: FormData): Promise<void
   redirect("/admin/registrations");
 }
 
-// Adds an admin with the default password; the new admin must change it at
-// the first login. Only roles with "manage_admins".
+// Adds an admin who gets an emailed link to set their own password. Only
+// roles with "manage_admins", with the editor's password and 2FA code again.
 export async function createAdminAction(prev: FormState, formData: FormData): Promise<FormState> {
   const auth = await authorize("manage_admins");
   if (!auth.ok) return failure(prev, NO_PERMISSION);
@@ -250,7 +250,9 @@ export async function createAdminAction(prev: FormState, formData: FormData): Pr
   refresh(); // the admins list shows the new admin
   return success(
     prev,
-    `Администраторът ${email.data} е добавен и получи имейл с връзка за задаване на парола (важи 72 часа). При първия вход ще настрои 2FA.`,
+    result.mailed
+      ? `Администраторът ${email.data} е добавен и получи имейл с връзка за задаване на парола (важи 72 часа). При първия вход ще настрои 2FA.`
+      : `Администраторът ${email.data} е добавен, но имейлът с поканата НЕ беше изпратен. Изпратете поканата отново от списъка по-долу.`,
   );
 }
 

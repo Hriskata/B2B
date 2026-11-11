@@ -48,4 +48,6 @@ export const LIMITS = {
   // Submitting a new password from a reset link (proposal): each submit looks
   // the link up in the database and hashes a password.
   resetSubmitPerIp: { limit: 20, windowSeconds: 60 * 60 },
+  // New invite links for one admin who has not set a password yet.
+  inviteResendPerAdmin: { limit: 5, windowSeconds: 60 * 60 },
 } as const;

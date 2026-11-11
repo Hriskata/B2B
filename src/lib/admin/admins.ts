@@ -1,11 +1,12 @@
 import "server-only";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, TransactionRollbackError } from "drizzle-orm";
 import { getDb, tables } from "@/db";
 import { writeAudit, type Actor } from "../audit";
 import { revokeAllSessions, revokeOtherSessions } from "../auth/session";
 import {
   consumeEmailToken,
   createEmailToken,
+  deleteUnusedTokens,
   TOKEN_TTL_SECONDS,
   usableTokenSubject,
 } from "../auth/tokens";
@@ -110,11 +111,12 @@ export async function resetAdminTwoFactor(
 }
 
 export type CreateAdminResult =
-  | { ok: true; id: string }
+  | { ok: true; id: string; mailed: boolean }
   | { ok: false; error: "exists" | "invalid_credentials" | "rate_limited" };
 
-// Adds an admin with the default password and the chosen role. The password is
-// never put in the journal or in the email. Journaled in the same transaction.
+// Adds an admin with the chosen role and mails them a one-time link to set
+// their own password. No password is ever shown, mailed or journaled.
+// Journaled in the same transaction.
 export async function createAdminAccount(
   actor: Actor,
   email: string,
@@ -150,10 +152,10 @@ export async function createAdminAccount(
     return { id: row.id, token };
   });
   if (!created) return { ok: false, error: "exists" };
-  await sendMail(
+  const mailed = await sendMail(
     adminInviteMail(email, actor.email, created.token, TOKEN_TTL_SECONDS.admin_invite / 3600),
   );
-  return { ok: true, id: created.id };
+  return { ok: true, id: created.id, mailed };
 }
 
 // A new invite link for an admin who has not set a password yet (the first
@@ -161,8 +163,10 @@ export async function createAdminAccount(
 export async function resendAdminInvite(
   actor: Actor,
   adminId: string,
-): Promise<"ok" | "not_found" | "not_waiting"> {
+): Promise<"ok" | "not_found" | "not_waiting" | "rate_limited"> {
   if (!/^[0-9a-f-]{36}$/i.test(adminId)) return "not_found";
+  // A few per hour for one admin: enough for a lost mail, not a mail flood.
+  if (!(await hit(`invite-resend:admin:${adminId}`, LIMITS.inviteResendPerAdmin))) return "rate_limited";
   const admin = (await getDb().select().from(tables.admins).where(eq(tables.admins.id, adminId)))[0];
   if (!admin) return "not_found";
   if (!admin.passwordMustChange || admin.status !== "active") return "not_waiting";
@@ -192,25 +196,43 @@ export async function emailForAdminInviteToken(token: string): Promise<string | 
 
 // The new admin sets their own password with the invite link (once). The
 // account then works with that password and the 2FA set up at first login.
+// Only while the admin has no own password yet and is active: an invite link
+// can never replace a password the admin chose. If that does not hold, the
+// transaction is rolled back (the link is not used up) and nothing changes.
 export async function acceptAdminInvite(token: string, password: string): Promise<boolean> {
   const passwordHash = await hashPassword(password);
-  return getDb().transaction(async (tx) => {
-    const adminId = await consumeEmailToken(token, "admin_invite", "admin", tx);
-    if (!adminId) return false;
-    const [admin] = await tx
-      .update(tables.admins)
-      .set({ passwordHash, passwordMustChange: false })
-      .where(eq(tables.admins.id, adminId))
-      .returning({ email: tables.admins.email });
-    // The password itself never goes into the journal.
-    await writeAudit(tx, { id: adminId, email: admin.email }, {
-      action: "admin.password_change",
-      targetType: "admin",
-      targetId: adminId,
-      details: { reason: "invite" },
+  let adminId: string | null = null;
+  try {
+    await getDb().transaction(async (tx) => {
+      adminId = await consumeEmailToken(token, "admin_invite", "admin", tx);
+      if (!adminId) return tx.rollback();
+      const [admin] = await tx
+        .update(tables.admins)
+        .set({ passwordHash, passwordMustChange: false })
+        .where(
+          and(
+            eq(tables.admins.id, adminId),
+            eq(tables.admins.passwordMustChange, true),
+            eq(tables.admins.status, "active"),
+          ),
+        )
+        .returning({ email: tables.admins.email });
+      if (!admin) return tx.rollback();
+      // The password itself never goes into the journal.
+      await writeAudit(tx, { id: adminId, email: admin.email }, {
+        action: "admin.password_change",
+        targetType: "admin",
+        targetId: adminId,
+        details: { reason: "invite" },
+      });
     });
-    return true;
-  });
+  } catch (error) {
+    if (error instanceof TransactionRollbackError) return false;
+    throw error;
+  }
+  // Like a reset: no session from before the new password stays.
+  if (adminId) await revokeAllSessions("admin", adminId);
+  return true;
 }
 
 export type ChangePasswordResult = "ok" | "wrong_password" | "weak" | "same" | "rate_limited";
@@ -242,6 +264,8 @@ export async function changeAdminPassword(
       .update(tables.admins)
       .set({ passwordHash, passwordMustChange: false })
       .where(eq(tables.admins.id, actor.id));
+    // An invite link still waiting must not set another password later.
+    await deleteUnusedTokens("admin_invite", "admin", actor.id, tx);
     await writeAudit(tx, actor, { action: "admin.password_change", targetType: "admin", targetId: actor.id });
   });
   await revokeOtherSessions("admin", actor.id);

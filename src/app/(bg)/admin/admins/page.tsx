@@ -25,9 +25,9 @@ export default function AdminAdminsPage() {
   );
 }
 
-// New admins are added here (role "Преглед и редакция" only) with a default
-// password that must be changed at the first login; the admin:create script
-// still works too.
+// New admins are added here (role "Преглед и редакция" only): they get an
+// emailed link to set their own password, which can be sent again while they
+// have none. The admin:create script still works too.
 async function Content() {
   const me = await requireAdmin();
   const admins = await listAdmins();
@@ -60,7 +60,7 @@ async function Content() {
                 {ROLE_LABEL[a.role]} ·{" "}
                 {a.status === "active" ? "Активен" : "Блокиран"} · 2FA:{" "}
                 {a.totpEnabledAt ? "включена" : "не е настроена"}
-                {a.passwordMustChange && " · още не е задал парола (поканата чака)"}
+                {a.passwordMustChange && " · още не е задал собствена парола"}
               </p>
               {canManage && a.passwordMustChange && a.status === "active" && (
                 <form action={resendAdminInviteAction} className="mt-2 text-sm">
