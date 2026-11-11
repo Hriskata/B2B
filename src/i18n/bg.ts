@@ -5,7 +5,7 @@ export const bg = {
   htmlLang: "bg",
   localeTag: "bg-BG",
   ogLocale: "bg_BG",
-  switchTo: { label: "English", ariaLabel: "Switch to English" },
+  switchTo: { label: "English", short: "EN", ariaLabel: "Switch to English" },
   header: {
     products: "Продукти",
     about: "За нас",

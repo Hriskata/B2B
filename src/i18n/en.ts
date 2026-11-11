@@ -6,7 +6,7 @@ export const en: Dict = {
   htmlLang: "en",
   localeTag: "en-GB",
   ogLocale: "en_GB",
-  switchTo: { label: "Български", ariaLabel: "Превключване към български" },
+  switchTo: { label: "Български", short: "BG", ariaLabel: "Превключване към български" },
   header: {
     products: "Products",
     about: "About us",
