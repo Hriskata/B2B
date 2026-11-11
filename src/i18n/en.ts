@@ -52,8 +52,9 @@ export const en: Dict = {
     metaDescription: (name: string) => `Models in the ${name} series: specifications, fibers and height.`,
     loading: "Loading…",
     empty: "There are no published models in this series.",
-    summary: (count: number, min: number, max: number, units: string) =>
-      `${count} models, from ${min} to ${max} fibers${units ? `, height ${units}` : ""}.`,
+    // fibers is null when no model of the series has a fiber count.
+    summary: (count: number, fibers: { min: number; max: number } | null, units: string) =>
+      `${count} models${fibers ? `, from ${fibers.min} to ${fibers.max} fibers` : ""}${units ? `, height ${units}` : ""}.`,
     commonTitle: "Features common to all series",
     common: [
       "Shuttered adapters (with a protective shutter)",
@@ -102,6 +103,7 @@ export const en: Dict = {
     notFoundTitle: "Product not found",
     back: "← Back to the catalogue",
     inquiry: "Send an inquiry about this model",
+    photoPlaceholder: "Photo",
   },
   specs: {
     ports: "Ports",

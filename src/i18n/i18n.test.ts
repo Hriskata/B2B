@@ -116,3 +116,13 @@ describe("productTitle", () => {
     expect(productTitle({ ...p, sku: null }, "en")).toBe("High-Density Splice SC12");
   });
 });
+
+describe("series summary", () => {
+  it("leaves out the fiber range when no model has a fiber count (no Infinity)", () => {
+    expect(getDict("bg").seriesPage.summary(1, null, "")).toBe("1 модела.");
+    expect(getDict("en").seriesPage.summary(2, { min: 12, max: 48 }, "1RU")).toBe(
+      "2 models, from 12 to 48 fibers, height 1RU.",
+    );
+    expect(getDict("en").seriesPage.summary(1, null, "")).not.toMatch(/Infinity/);
+  });
+});

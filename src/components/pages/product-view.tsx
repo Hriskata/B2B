@@ -58,7 +58,14 @@ export async function ProductView({
         {t.product.back}
       </Link>
       <article className="mt-6 grid gap-6 md:grid-cols-2 md:gap-10">
-        <ProductImage sku={product.sku} alt={product.name} priority />
+        {/* Half of the 1120 px page from 768 px up (two columns), else full width. */}
+        <ProductImage
+          sku={product.sku}
+          alt={product.name}
+          priority
+          sizes="(min-width: 1120px) 540px, (min-width: 768px) 50vw, 100vw"
+          placeholder={t.product.photoPlaceholder}
+        />
         <div className="flex flex-col gap-4">
           <h1 className="text-primary">{product.name}</h1>
           <p className="whitespace-pre-line text-secondary">
