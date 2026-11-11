@@ -14,6 +14,15 @@ describe("fullNameSchema", () => {
   it.each(["", " ", "И", "Иван\nПетров", "x".repeat(121)])("rejects %j", (value) => {
     expect(fullNameSchema.safeParse(value).success).toBe(false);
   });
+
+  // Bidi override, line and paragraph separators, zero-width space.
+  it.each(["‮", " ", " ", "​"])(
+    "rejects hidden or line-breaking character %j in person and company names",
+    (ch) => {
+      expect(fullNameSchema.safeParse(`Иван${ch}Петров`).success).toBe(false);
+      expect(companyNameSchema.safeParse(`Тест${ch} ЕООД`).success).toBe(false);
+    },
+  );
 });
 
 describe("emailSchema", () => {

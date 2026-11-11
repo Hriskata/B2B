@@ -48,11 +48,7 @@ export async function notifyAdminsOfPendingRegistration(userId: string): Promise
   const db = getDb();
   const registration = (
     await db
-      .select({
-        email: tables.users.email,
-        companyName: tables.companies.name,
-        country: tables.companies.country,
-      })
+      .select({ country: tables.companies.country })
       .from(tables.users)
       .innerJoin(tables.companies, eq(tables.companies.id, tables.users.companyId))
       .where(eq(tables.users.id, userId))
@@ -64,10 +60,7 @@ export async function notifyAdminsOfPendingRegistration(userId: string): Promise
     .where(eq(tables.admins.status, "active"));
   for (const admin of admins) {
     await sendMail(
-      registrationPendingAdminMail(admin.email, {
-        ...registration,
-        country: countryName(registration.country),
-      }),
+      registrationPendingAdminMail(admin.email, countryName(registration.country)),
     );
   }
 }

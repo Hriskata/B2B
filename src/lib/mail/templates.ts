@@ -96,20 +96,17 @@ export function twoFactorResetMail(to: string, resetBy: string): Mail {
 
 // Manual review (phase 2). DRAFT texts, like the rest of this file.
 
-export function registrationPendingAdminMail(
-  to: string,
-  registration: { companyName: string; country: string; email: string },
-): Mail {
+// Only the country (from our own list) is in the mail. The company name and
+// email are typed by the customer and could carry a link or fake text inside
+// a mail from our own sender; the admin sees them in the portal.
+export function registrationPendingAdminMail(to: string, country: string): Mail {
   return {
     to,
     subject: "Нова регистрация чака преглед",
     text: [
       "Здравейте,",
       "",
-      "Нова регистрация чака ръчен преглед:",
-      `Фирма: ${registration.companyName}`,
-      `Държава: ${registration.country}`,
-      `Имейл: ${registration.email}`,
+      `Нова регистрация на фирма от държава ${country} чака ръчен преглед.`,
       "",
       `Преглед: ${getEnv().APP_URL.replace(/\/$/, "")}/admin/registrations`,
     ].join("\n"),

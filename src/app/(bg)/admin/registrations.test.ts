@@ -69,8 +69,10 @@ describeDb("registration waiting for review", () => {
 
     expect(sentMails.map((m) => m.to).sort()).toEqual(["a1@firma.bg", "a2@firma.bg"]);
     expect(sentMails[0].subject).toBe("Нова регистрация чака преглед");
-    expect(sentMails[0].text).toContain("Muster GmbH");
     expect(sentMails[0].text).toContain("Германия");
+    // Text typed by the customer stays out of mail from our own sender.
+    expect(sentMails[0].text).not.toContain("Muster GmbH");
+    expect(sentMails[0].text).not.toContain("client@firma.de");
     expect(sentMails[0].text).toContain("/admin/registrations");
   });
 
