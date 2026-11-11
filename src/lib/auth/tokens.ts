@@ -52,9 +52,18 @@ export async function isEmailTokenUsable(
   purpose: TokenPurpose,
   subjectType: TokenSubject,
 ): Promise<boolean> {
-  if (!token || token.length > 200) return false;
+  return (await usableTokenSubject(token, purpose, subjectType)) !== null;
+}
+
+// The account a usable token belongs to, without using the token up.
+export async function usableTokenSubject(
+  token: string,
+  purpose: TokenPurpose,
+  subjectType: TokenSubject,
+): Promise<string | null> {
+  if (!token || token.length > 200) return null;
   const rows = await getDb()
-    .select({ tokenHash: tables.emailTokens.tokenHash })
+    .select({ subjectId: tables.emailTokens.subjectId })
     .from(tables.emailTokens)
     .where(
       and(
@@ -65,7 +74,7 @@ export async function isEmailTokenUsable(
         gt(tables.emailTokens.expiresAt, sql`now()`),
       ),
     );
-  return rows.length === 1;
+  return rows.length === 1 ? rows[0].subjectId : null;
 }
 
 // Single atomic UPDATE: of two concurrent requests only one gets the row.

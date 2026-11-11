@@ -378,6 +378,28 @@ describeDb("admin password reset", () => {
     expect(await getCurrentAdmin("full")).toBeNull();
   });
 
+  it("refuses a password with the email in it, and a reset ends the forced change of the default password", async () => {
+    await createAdmin({ passwordMustChange: true });
+    await ask("admin@firma.bg");
+    const token = tokenFromMail(sentMails[0]);
+
+    const weak = await adminResetPasswordAction(
+      initialFormState,
+      fd({ token, password: "Admin@firma.bg1", confirm: "Admin@firma.bg1" }),
+    );
+    expect(weak.status).toBe("error");
+    expect(weak.fieldErrors?.password).toBeTruthy();
+
+    await redirectedTo(() =>
+      adminResetPasswordAction(
+        initialFormState,
+        fd({ token, password: "Nova-parola9", confirm: "Nova-parola9" }),
+      ),
+    );
+    const [admin] = await getDb().select().from(tables.admins);
+    expect(admin.passwordMustChange).toBe(false);
+  });
+
   it("a customer reset token does not work on the admin reset", async () => {
     await createUser();
     await createAdmin();

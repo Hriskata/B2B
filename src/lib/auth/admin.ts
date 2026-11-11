@@ -7,7 +7,12 @@ import { getEnv } from "../env";
 import { hashPassword, verifyAgainstDummy, verifyPassword } from "../password";
 import { hit, isLimited, LIMITS, reset } from "../rate-limit";
 import { createSession, revokeAllSessions } from "./session";
-import { consumeEmailToken, createEmailToken, TOKEN_TTL_SECONDS } from "./tokens";
+import {
+  consumeEmailToken,
+  createEmailToken,
+  TOKEN_TTL_SECONDS,
+  usableTokenSubject,
+} from "./tokens";
 
 export type AdminLoginResult =
   | { status: "next"; step: "full" | "mfa_verify" | "mfa_setup" }
@@ -74,15 +79,27 @@ export async function requestAdminPasswordReset(email: string, ip: string): Prom
   );
 }
 
+// Email of the admin a reset link belongs to (see emailForCustomerResetToken).
+export async function emailForAdminResetToken(token: string): Promise<string | null> {
+  const adminId = await usableTokenSubject(token, "reset_password", "admin");
+  if (!adminId) return null;
+  const admin = (await getDb().select().from(tables.admins).where(eq(tables.admins.id, adminId)))[0];
+  return admin?.email ?? null;
+}
+
 // Changes only the password. 2FA stays as it is, so a reset never lets
 // someone in without the second factor (checklist B). Every session of the
-// admin is ended.
+// admin is ended. The reset proves the admin owns the mailbox and chose the
+// password, so a forced change of the default password is no longer needed.
 export async function resetAdminPassword(token: string, password: string): Promise<boolean> {
   const passwordHash = await hashPassword(password);
   return getDb().transaction(async (tx) => {
     const adminId = await consumeEmailToken(token, "reset_password", "admin", tx);
     if (!adminId) return false;
-    await tx.update(tables.admins).set({ passwordHash }).where(eq(tables.admins.id, adminId));
+    await tx
+      .update(tables.admins)
+      .set({ passwordHash, passwordMustChange: false })
+      .where(eq(tables.admins.id, adminId));
     await revokeAllSessions("admin", adminId);
     return true;
   });
