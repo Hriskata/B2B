@@ -145,6 +145,49 @@ export const en: Dict = {
       ["Pre-routed pigtails", "Models come pre-loaded in their standard configuration."],
     ],
     seriesTitle: "Series",
+    showcase: {
+      sku: "HDS-ODF-001-SC12",
+      eyebrow: "The product up close",
+      lead: "Point at a part of the panel or pick a description: the two are linked. Descriptions come from the catalogue only; those marked “AWAITING CONFIRMATION” wait for the owner’s answer.",
+      pending: "AWAITING CONFIRMATION",
+      insideTitle: "Inside the housing (not visible in the picture)",
+      listLabel: "Parts of the product",
+      imageFailed: "The picture could not be loaded.",
+      open: "Go to the product page",
+      items: {
+        housing: {
+          name: "Housing",
+          short: "Steel / aluminium with a powder coating, black.",
+          more: "The catalogue is inconsistent about the material (the table says aluminium, the product pages say steel and aluminium). Dimensions and weight: on request.",
+        },
+        adapters: {
+          name: "SC adapters",
+          short: (ports: number) => `${ports} SC adapters with a protective shutter.`,
+          more: (polish: string) => `Polish options: ${polish}.`,
+        },
+        door: {
+          name: "Front door",
+          short: "The front door is part of the model.",
+          more: "The catalogue does not state the door material: on request.",
+        },
+        ear: {
+          name: "Mounting ears",
+          short: "Flanges that fix the panel in a rack, 1RU high.",
+          more: "They are visible in the picture but not described in the catalogue.",
+        },
+        pigtails: {
+          name: "Pigtails",
+          short: (fibers: number) =>
+            `Pre-loaded and pre-routed, ${fibers} fibers in the standard configuration.`,
+          more: (max: number) => `Variants up to ${max} fibers.`,
+        },
+        splice: {
+          name: "Splice cassettes",
+          short: "A splice model: the fibers are joined inside the panel.",
+          more: "The number and type of cassettes are not stated in the catalogue: on request.",
+        },
+      },
+    },
     applicationsTitle: "Applications",
     applications: [
       ["MDA", "Data center"],

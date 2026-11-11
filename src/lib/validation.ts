@@ -4,14 +4,6 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-// Format only: 9 digits (EIK) or 13 digits (EIK of a branch). Whether the
-// company exists and is active is checked by the CompanyVerifier in phase 2.
-const EIK_PATTERN = /^(\d{9}|\d{13})$/;
-
-export function normalizeEik(eik: string): string {
-  return eik.replace(/\s+/g, "");
-}
-
 export const emailSchema = z
   .string()
   .trim()
@@ -19,10 +11,13 @@ export const emailSchema = z
   .pipe(z.email("Невалиден имейл адрес."))
   .transform(normalizeEmail);
 
-export const eikSchema = z
+export const fullNameSchema = z
   .string()
-  .transform(normalizeEik)
-  .pipe(z.string().regex(EIK_PATTERN, "ЕИК трябва да е 9 или 13 цифри."));
+  .trim()
+  .min(2, "Въведете име и фамилия.")
+  .max(120, "Името е твърде дълго.")
+  // No control characters (also blocks line breaks that could end up in mail).
+  .refine((v) => !/[\p{Cc}]/u.test(v), "Името съдържа невалидни знаци.");
 
 export const companyNameSchema = z
   .string()

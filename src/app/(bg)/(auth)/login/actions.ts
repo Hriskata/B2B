@@ -29,6 +29,12 @@ export async function loginAction(prev: FormState, formData: FormData): Promise<
         "Профилът ви още не е потвърден. Отворете връзката от имейла за потвърждение.",
         { values },
       );
+    case "pending_review":
+      return failure(
+        prev,
+        "Профилът ви чака одобрение от нашия екип. Ще можете да влезете след одобрението.",
+        { values },
+      );
     case "blocked":
       return failure(prev, "Профилът е блокиран. Свържете се с нас.", { values });
     case "rate_limited":

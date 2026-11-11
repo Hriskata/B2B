@@ -1,22 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { companyNameSchema, eikSchema, emailSchema, normalizeEmail } from "./validation";
+import {
+  companyNameSchema,
+  emailSchema,
+  fullNameSchema,
+  normalizeEmail,
+} from "./validation";
 
-describe("eikSchema", () => {
-  it("accepts 9 and 13 digit values", () => {
-    expect(eikSchema.parse("123456789")).toBe("123456789");
-    expect(eikSchema.parse("1234567890123")).toBe("1234567890123");
+describe("fullNameSchema", () => {
+  it("trims the name", () => {
+    expect(fullNameSchema.parse("  Иван Петров ")).toBe("Иван Петров");
   });
 
-  it("removes spaces", () => {
-    expect(eikSchema.parse(" 123 456 789 ")).toBe("123456789");
+  it.each(["", " ", "И", "Иван\nПетров", "x".repeat(121)])("rejects %j", (value) => {
+    expect(fullNameSchema.safeParse(value).success).toBe(false);
   });
-
-  it.each(["", "12345678", "1234567890", "12345678901234", "12345678a", "BG123456789", "1234567.9"])(
-    "rejects %j",
-    (value) => {
-      expect(eikSchema.safeParse(value).success).toBe(false);
-    },
-  );
 });
 
 describe("emailSchema", () => {
