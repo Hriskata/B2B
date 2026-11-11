@@ -55,6 +55,11 @@ export function checkEnvironment(kind: EnvKind, env: Vars, other?: Vars): Proble
   if (password && (password.length < 20 || WEAK_PASSWORD.test(password) || /^<.*>$/.test(password))) {
     bad("POSTGRES_PASSWORD", "must be a random value of at least 20 characters");
   }
+  // The compose files put it into DATABASE_URL as it is: / @ : # ? + % would
+  // break the address. base64url (letters, digits, - and _) is safe.
+  if (password && !/^[A-Za-z0-9_-]+$/.test(password)) {
+    bad("POSTGRES_PASSWORD", "may contain only letters, digits, - and _ (it goes into the database URL)");
+  }
 
   const key = get("TOTP_ENCRYPTION_KEY");
   if (key && !validBase64Key(key)) bad("TOTP_ENCRYPTION_KEY", "must be 32 random bytes, base64");

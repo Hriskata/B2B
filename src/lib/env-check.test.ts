@@ -55,6 +55,15 @@ describe("checkEnvironment", () => {
     expect(names({ ...good, TOTP_ENCRYPTION_KEY: "not-a-key" })).toEqual(["TOTP_ENCRYPTION_KEY"]);
   });
 
+  it("refuses a database password that would break the database URL", () => {
+    for (const ch of ["/", "@", ":", "#", "?", "+", "%"]) {
+      expect(names({ ...good, POSTGRES_PASSWORD: `k3J9xQ7mWp2LsVn8RtYb${ch}4Zc6` })).toEqual([
+        "POSTGRES_PASSWORD",
+      ]);
+    }
+    expect(names({ ...good, POSTGRES_PASSWORD: "k3J9xQ7m-Wp2LsVn8_RtYb4Zc6" })).toEqual([]);
+  });
+
   it("needs at least one trusted proxy", () => {
     expect(names({ ...good, TRUSTED_PROXY_COUNT: "0" })).toEqual(["TRUSTED_PROXY_COUNT"]);
   });
