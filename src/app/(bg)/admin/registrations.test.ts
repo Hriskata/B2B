@@ -5,6 +5,7 @@ import { forgotPasswordAction } from "@/app/(bg)/(auth)/forgot-password/actions"
 import { loginAction } from "@/app/(bg)/(auth)/login/actions";
 import { registerAction } from "@/app/(bg)/(auth)/register/actions";
 import { verifyEmailAction } from "@/app/(bg)/(auth)/verify-email/actions";
+import { listPendingRegistrations } from "@/lib/admin/registrations";
 import { getCurrentAdmin, getCurrentUser } from "@/lib/auth/current";
 import { initialFormState } from "@/lib/form-state";
 import { codeFor, createAdmin, createUser, fd, PASSWORD } from "@/test/factories";
@@ -30,8 +31,9 @@ const pendingUser = () =>
 
 const userRow = async () => (await getDb().select().from(tables.users))[0];
 const auditRows = () => getDb().select().from(tables.auditLog);
+// Returns where the action sends the admin (null when it does not redirect).
 const review = (userId: string, decision: string) =>
-  reviewRegistrationAction(fd({ userId, decision }));
+  redirectedTo(() => reviewRegistrationAction(fd({ userId, decision })));
 
 async function customerLogin() {
   cookieJar.clear();
@@ -135,9 +137,22 @@ describeDb("manual review: who may decide", () => {
       loginAction(initialFormState, fd({ email: "other@firma.bg", password: PASSWORD })),
     );
 
-    await redirectedTo(() => review(user.id, "approve"));
+    expect(await review(user.id, "approve")).toBe("/admin/login");
 
     expect((await userRow()).status).toBe("pending_review");
+    expect(await auditRows()).toHaveLength(0);
+  });
+
+  it("without any session the action changes nothing", async () => {
+    const user = await pendingUser();
+    cookieJar.clear();
+    sentMails.length = 0;
+
+    expect(await review(user.id, "approve")).toBe("/admin/login");
+
+    expect((await userRow()).status).toBe("pending_review");
+    expect(sentMails).toHaveLength(0);
+    expect(await auditRows()).toHaveLength(0);
   });
 });
 
@@ -147,7 +162,7 @@ describeDb("manual review: decisions", () => {
     await loginAdminAs("editor@firma.bg", "editor");
     sentMails.length = 0;
 
-    await review(user.id, "approve");
+    expect(await review(user.id, "approve")).toBe("/admin/registrations?notice=approve");
 
     const row = await userRow();
     expect(row.status).toBe("active");
@@ -169,7 +184,7 @@ describeDb("manual review: decisions", () => {
     await loginAdminAs("editor@firma.bg", "editor");
     sentMails.length = 0;
 
-    await review(user.id, "reject");
+    expect(await review(user.id, "reject")).toBe("/admin/registrations?notice=reject");
 
     const row = await userRow();
     expect(row.status).toBe("rejected");
@@ -192,10 +207,11 @@ describeDb("manual review: decisions", () => {
     await review(user.id, "approve");
     sentMails.length = 0;
 
-    await review(user.id, "reject"); // already decided
+    // Already decided: the admin is told the earlier decision stands.
+    expect(await review(user.id, "reject")).toBe("/admin/registrations?notice=already-decided");
     await review(active.id, "reject"); // never waited
     await review("not-a-uuid", "approve");
-    await review(user.id, "maybe");
+    expect(await review(user.id, "maybe")).toBeNull();
 
     expect((await userRow()).status).toBe("active");
     const activeRow = (
@@ -206,6 +222,27 @@ describeDb("manual review: decisions", () => {
     expect(await auditRows()).toHaveLength(1);
   });
 
+  it("two decisions at the same time: exactly one wins, one journal entry, one mail", async () => {
+    const user = await pendingUser();
+    await loginAdminAs("editor@firma.bg", "editor");
+    sentMails.length = 0;
+
+    const results = await Promise.all([review(user.id, "approve"), review(user.id, "reject")]);
+
+    expect(results.filter((r) => r?.endsWith("already-decided"))).toHaveLength(1);
+    expect(await auditRows()).toHaveLength(1);
+    expect(sentMails).toHaveLength(1);
+    expect(["active", "rejected"]).toContain((await userRow()).status);
+  });
+
+  it("lists a waiting profile of a blocked company with the block shown", async () => {
+    const user = await pendingUser();
+    await getDb().update(tables.companies).set({ blockedAt: new Date() });
+    const [entry] = await listPendingRegistrations();
+    expect(entry).toMatchObject({ userId: user.id });
+    expect(entry.companyBlockedAt).not.toBeNull();
+  });
+
   it("unblocking returns to the reviewed state, not back to waiting", async () => {
     const user = await pendingUser();
     await loginAdminAs("editor@firma.bg", "editor");
@@ -214,7 +251,10 @@ describeDb("manual review: decisions", () => {
     await setUserBlockedAction(fd({ userId: user.id, blocked: "false" }));
     expect((await userRow()).status).toBe("active");
 
-    await getDb().update(tables.users).set({ status: "rejected", approvedAt: null, rejectedAt: new Date() });
+    await getDb()
+      .update(tables.users)
+      .set({ status: "rejected", approvedAt: null, rejectedAt: new Date() })
+      .where(eq(tables.users.id, user.id));
     await setUserBlockedAction(fd({ userId: user.id, blocked: "true" }));
     await setUserBlockedAction(fd({ userId: user.id, blocked: "false" }));
     expect((await userRow()).status).toBe("rejected");

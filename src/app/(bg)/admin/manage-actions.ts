@@ -191,12 +191,13 @@ export async function reviewRegistrationAction(formData: FormData): Promise<void
   if (!auth.ok) return;
   const decision = field(formData, "decision");
   if (decision !== "approve" && decision !== "reject") return;
-  await reviewRegistration(
+  const result = await reviewRegistration(
     { id: auth.admin.id, email: auth.admin.email },
     field(formData, "userId"),
     decision,
   );
-  refresh();
+  // Another admin may have decided first: say so, the earlier decision stands.
+  redirect(`/admin/registrations?notice=${result === "ok" ? decision : "already-decided"}`);
 }
 
 // Adds an admin with the default password; the new admin must change it at

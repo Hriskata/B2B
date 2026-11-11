@@ -22,6 +22,7 @@ export type PendingRegistration = {
   companyName: string;
   country: string;
   companyNumber: string;
+  companyBlockedAt: Date | null;
 };
 
 export async function listPendingRegistrations(): Promise<PendingRegistration[]> {
@@ -35,6 +36,7 @@ export async function listPendingRegistrations(): Promise<PendingRegistration[]>
       companyName: tables.companies.name,
       country: tables.companies.country,
       companyNumber: tables.companies.companyNumber,
+      companyBlockedAt: tables.companies.blockedAt,
     })
     .from(tables.users)
     .innerJoin(tables.companies, eq(tables.companies.id, tables.users.companyId))
@@ -58,10 +60,16 @@ export async function notifyAdminsOfPendingRegistration(userId: string): Promise
     .select({ email: tables.admins.email })
     .from(tables.admins)
     .where(eq(tables.admins.status, "active"));
-  for (const admin of admins) {
-    await sendMail(
-      registrationPendingAdminMail(admin.email, countryName(registration.country)),
-    );
+  // In parallel, so a slow mail server does not keep the customer waiting
+  // once per admin. A lost notice is logged without any address.
+  const sent = await Promise.all(
+    admins.map((admin) =>
+      sendMail(registrationPendingAdminMail(admin.email, countryName(registration.country))),
+    ),
+  );
+  const failed = sent.filter((ok) => !ok).length;
+  if (failed > 0) {
+    console.error(`Review notice not sent to ${failed} admin(s) for registration ${userId}`);
   }
 }
 
