@@ -2,18 +2,21 @@ import "server-only";
 import { asc, eq, inArray } from "drizzle-orm";
 import { getDb, tables } from "@/db";
 import { writeAudit, type Actor } from "../audit";
+import { statusAfterEmailConfirmed } from "../auth/customer";
 import { revokeAllSessions } from "../auth/session";
 
 export type CustomerUser = {
   id: string;
   email: string;
-  status: "unverified" | "active" | "blocked";
+  fullName: string | null;
+  status: "unverified" | "active" | "blocked" | "pending_review";
   createdAt: Date;
 };
 
 export type CustomerCompany = {
   id: string;
-  eik: string;
+  country: string;
+  companyNumber: string;
   name: string;
   blockedAt: Date | null;
   users: CustomerUser[];
@@ -25,19 +28,27 @@ export async function listCustomers(): Promise<CustomerCompany[]> {
   const users = await db.select().from(tables.users).orderBy(asc(tables.users.email));
   return companies.map((c) => ({
     id: c.id,
-    eik: c.eik,
+    country: c.country,
+    companyNumber: c.companyNumber,
     name: c.name,
     blockedAt: c.blockedAt,
     users: users
       .filter((u) => u.companyId === c.id)
-      .map((u) => ({ id: u.id, email: u.email, status: u.status, createdAt: u.createdAt })),
+      .map((u) => ({
+        id: u.id,
+        email: u.email,
+        fullName: u.fullName,
+        status: u.status,
+        createdAt: u.createdAt,
+      })),
   }));
 }
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
 // Blocking ends every session of the person at once; unblocking restores the
-// state they had (active if their email was verified, otherwise unverified).
+// state they had: unverified without a confirmed email, otherwise active, or
+// pending review for a foreign company (see statusAfterEmailConfirmed).
 export async function setUserBlocked(
   actor: Actor,
   userId: string,
@@ -45,11 +56,21 @@ export async function setUserBlocked(
 ): Promise<"ok" | "not_found"> {
   if (!UUID.test(userId)) return "not_found";
   const result = await getDb().transaction(async (tx) => {
-    const user = (await tx.select().from(tables.users).where(eq(tables.users.id, userId)))[0];
-    if (!user) return "not_found" as const;
+    const found = (
+      await tx
+        .select({ user: tables.users, country: tables.companies.country })
+        .from(tables.users)
+        .innerJoin(tables.companies, eq(tables.companies.id, tables.users.companyId))
+        .where(eq(tables.users.id, userId))
+    )[0];
+    if (!found) return "not_found" as const;
+    const { user } = found;
+    const unblocked = user.emailVerifiedAt
+      ? statusAfterEmailConfirmed(found.country)
+      : "unverified";
     await tx
       .update(tables.users)
-      .set({ status: blocked ? "blocked" : user.emailVerifiedAt ? "active" : "unverified" })
+      .set({ status: blocked ? "blocked" : unblocked })
       .where(eq(tables.users.id, userId));
     await writeAudit(tx, actor, {
       action: blocked ? "user.block" : "user.unblock",
@@ -84,7 +105,11 @@ export async function setCompanyBlocked(
       action: blocked ? "company.block" : "company.unblock",
       targetType: "company",
       targetId: companyId,
-      details: { eik: company.eik, name: company.name },
+      details: {
+        country: company.country,
+        companyNumber: company.companyNumber,
+        name: company.name,
+      },
     });
     return "ok" as const;
   });

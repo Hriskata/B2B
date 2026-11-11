@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { getCaptchaSiteKey } from "@/lib/captcha";
+import { countryOptions } from "@/lib/company-number";
 import { RegisterForm } from "./register-form";
 
 export const metadata: Metadata = { title: "Регистрация" };
@@ -21,5 +22,5 @@ export default function RegisterPage() {
 // environment and is not baked into the build.
 async function Form() {
   await connection();
-  return <RegisterForm siteKey={getCaptchaSiteKey()} />;
+  return <RegisterForm siteKey={getCaptchaSiteKey()} countries={countryOptions()} />;
 }

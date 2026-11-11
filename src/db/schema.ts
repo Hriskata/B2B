@@ -9,13 +9,21 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
 // Customers and admins live in separate tables on purpose (checklist D):
 // a bug in customer code must not be able to turn a customer into an admin.
 
-export const userStatus = pgEnum("user_status", ["unverified", "active", "blocked"]);
+// pending_review: email confirmed, waiting for an admin (foreign companies;
+// in phase 2 also registrations whose company check failed).
+export const userStatus = pgEnum("user_status", [
+  "unverified",
+  "active",
+  "blocked",
+  "pending_review",
+]);
 export const adminRole = pgEnum("admin_role", ["viewer", "editor"]);
 export const adminStatus = pgEnum("admin_status", ["active", "blocked"]);
 export const subjectType = pgEnum("subject_type", ["user", "admin"]);
@@ -29,14 +37,22 @@ export const emailTokenPurpose = pgEnum("email_token_purpose", [
 
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true });
 
-export const companies = pgTable("companies", {
-  id: uuid().primaryKey().defaultRandom(),
-  eik: text().notNull().unique(),
-  name: text().notNull(),
-  // Set when an admin blocks the whole company: all its users lose access.
-  blockedAt: timestamptz("blocked_at"),
-  createdAt: timestamptz("created_at").notNull().defaultNow(),
-});
+export const companies = pgTable(
+  "companies",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    // ISO 3166-1 alpha-2 code of the country where the company is registered.
+    country: text().notNull().default("BG"),
+    // EIK for Bulgaria, VAT number for the EU, EIN for the US, the register
+    // number elsewhere; stored in the form returned by parseCompanyNumber.
+    companyNumber: text("company_number").notNull(),
+    name: text().notNull(),
+    // Set when an admin blocks the whole company: all its users lose access.
+    blockedAt: timestamptz("blocked_at"),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (t) => [unique("companies_country_number_unique").on(t.country, t.companyNumber)],
+);
 
 export const users = pgTable(
   "users",
@@ -47,6 +63,8 @@ export const users = pgTable(
       .references(() => companies.id),
     // Stored lower-cased and trimmed; uniqueness is on this value.
     email: text().notNull().unique(),
+    // Name of the person; null for accounts created before it was asked.
+    fullName: text("full_name"),
     passwordHash: text("password_hash").notNull(),
     status: userStatus().notNull().default("unverified"),
     emailVerifiedAt: timestamptz("email_verified_at"),

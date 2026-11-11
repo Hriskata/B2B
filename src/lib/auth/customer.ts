@@ -16,12 +16,23 @@ function isUniqueViolation(error: unknown): boolean {
 }
 
 export type RegisterInput = {
+  fullName: string;
+  country: string;
   companyName: string;
-  eik: string;
+  // Already in the stored form (parseCompanyNumber).
+  companyNumber: string;
   email: string;
   password: string;
   ip: string;
 };
+
+// Status once the email is confirmed (also restored by unblocking). Only
+// Bulgarian companies are approved without a person; foreign companies wait
+// for manual review (decided 10.11.2026). Phase 2 adds the CompanyVerifier
+// for Bulgaria and the admin approval that ends the review.
+export function statusAfterEmailConfirmed(country: string): "active" | "pending_review" {
+  return country === "BG" ? "active" : "pending_review";
+}
 
 // Phase 1 only: no company check yet. Phase 2 inserts the CompanyVerifier
 // step BEFORE the verification email, as CLAUDE.md requires.
@@ -48,7 +59,7 @@ export async function registerCustomer(input: RegisterInput): Promise<"ok" | "ra
       await sendMail(
         verifyEmailMail(input.email, token, TOKEN_TTL_SECONDS.verify_email / 3600),
       );
-    } else if (existing.status === "active") {
+    } else if (existing.status === "active" || existing.status === "pending_review") {
       await sendMail(alreadyRegisteredMail(input.email));
     }
     return "ok";
@@ -58,16 +69,35 @@ export async function registerCustomer(input: RegisterInput): Promise<"ok" | "ra
     const token = await db.transaction(async (tx) => {
       await tx
         .insert(tables.companies)
-        .values({ eik: input.eik, name: input.companyName })
-        .onConflictDoNothing({ target: tables.companies.eik });
+        .values({
+          country: input.country,
+          companyNumber: input.companyNumber,
+          name: input.companyName,
+        })
+        .onConflictDoNothing({
+          target: [tables.companies.country, tables.companies.companyNumber],
+        });
       const company = (
-        await tx.select().from(tables.companies).where(eq(tables.companies.eik, input.eik))
+        await tx
+          .select()
+          .from(tables.companies)
+          .where(
+            and(
+              eq(tables.companies.country, input.country),
+              eq(tables.companies.companyNumber, input.companyNumber),
+            ),
+          )
       )[0];
       // A second profile for an existing company keeps the stored company
       // name. Whether the first owner must approve it is an open question.
       const [user] = await tx
         .insert(tables.users)
-        .values({ companyId: company.id, email: input.email, passwordHash })
+        .values({
+          companyId: company.id,
+          email: input.email,
+          fullName: input.fullName,
+          passwordHash,
+        })
         .returning({ id: tables.users.id });
       return createEmailToken("verify_email", "user", user.id, tx);
     });
@@ -79,20 +109,38 @@ export async function registerCustomer(input: RegisterInput): Promise<"ok" | "ra
   return "ok";
 }
 
-export async function verifyCustomerEmail(token: string): Promise<boolean> {
+// "active" or "pending_review" for a valid link (whatever the account's state
+// was), "invalid" otherwise.
+export async function verifyCustomerEmail(
+  token: string,
+): Promise<"active" | "pending_review" | "invalid"> {
   return getDb().transaction(async (tx) => {
     const userId = await consumeEmailToken(token, "verify_email", "user", tx);
-    if (!userId) return false;
+    if (!userId) return "invalid";
+    const { country } = (
+      await tx
+        .select({ country: tables.companies.country })
+        .from(tables.users)
+        .innerJoin(tables.companies, eq(tables.companies.id, tables.users.companyId))
+        .where(eq(tables.users.id, userId))
+    )[0];
+    const status = statusAfterEmailConfirmed(country);
     await tx
       .update(tables.users)
-      .set({ status: "active", emailVerifiedAt: new Date() })
+      .set({ status, emailVerifiedAt: new Date() })
       // Only unverified accounts change; a blocked account stays blocked.
       .where(and(eq(tables.users.id, userId), eq(tables.users.status, "unverified")));
-    return true;
+    return status;
   });
 }
 
-export type LoginResult = "ok" | "invalid" | "unverified" | "blocked" | "rate_limited";
+export type LoginResult =
+  | "ok"
+  | "invalid"
+  | "unverified"
+  | "pending_review"
+  | "blocked"
+  | "rate_limited";
 
 export async function loginCustomer(
   email: string,
@@ -132,6 +180,7 @@ export async function loginCustomer(
   await reset(accountKey);
   // Only someone who knows the password learns these two states.
   if (user.status === "blocked" || found.companyBlockedAt) return "blocked";
+  if (user.status === "pending_review") return "pending_review";
   if (user.status !== "active") return "unverified";
 
   await createSession("user", user.id);

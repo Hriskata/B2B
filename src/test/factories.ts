@@ -1,5 +1,5 @@
 import { NobleCryptoPlugin, ScureBase32Plugin, TOTP, generateSecret } from "otplib";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getDb, tables } from "@/db";
 import { encryptSecret, generateRecoveryCode, hashRecoveryCode } from "@/lib/crypto";
 import { hashPassword } from "@/lib/password";
@@ -17,18 +17,31 @@ export async function createUser(
   overrides: Partial<{
     email: string;
     password: string;
-    status: "unverified" | "active" | "blocked";
-    eik: string;
+    status: "unverified" | "active" | "blocked" | "pending_review";
+    country: string;
+    companyNumber: string;
+    fullName: string;
     companyName: string;
   }> = {},
 ) {
   const db = getDb();
-  const eik = overrides.eik ?? "123456789";
+  const country = overrides.country ?? "BG";
+  const companyNumber = overrides.companyNumber ?? "123456789";
   await db
     .insert(tables.companies)
-    .values({ eik, name: overrides.companyName ?? "Тест ЕООД" })
+    .values({ country, companyNumber, name: overrides.companyName ?? "Тест ЕООД" })
     .onConflictDoNothing();
-  const company = (await db.select().from(tables.companies).where(eq(tables.companies.eik, eik)))[0];
+  const company = (
+    await db
+      .select()
+      .from(tables.companies)
+      .where(
+        and(
+          eq(tables.companies.country, country),
+          eq(tables.companies.companyNumber, companyNumber),
+        ),
+      )
+  )[0];
   const email = overrides.email ?? "client@firma.bg";
   const status = overrides.status ?? "active";
   const [user] = await db
@@ -36,6 +49,7 @@ export async function createUser(
     .values({
       companyId: company.id,
       email,
+      fullName: overrides.fullName ?? "Иван Петров",
       passwordHash: await hashPassword(overrides.password ?? PASSWORD),
       status,
       emailVerifiedAt: status === "unverified" ? null : new Date(),

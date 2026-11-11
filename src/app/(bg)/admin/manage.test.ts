@@ -257,8 +257,8 @@ describeDb("catalog editing: behavior and journal", () => {
 });
 
 describeDb("blocking accounts", () => {
-  async function customerSession(email = "client@firma.bg", eik = "123456789") {
-    await createUser({ email, eik });
+  async function customerSession(email = "client@firma.bg", companyNumber = "123456789") {
+    await createUser({ email, companyNumber });
     cookieJar.clear();
     await redirectedTo(() => loginAction(initialFormState, fd({ email, password: PASSWORD })));
     return new Map(cookieJar) as Jar;
@@ -326,11 +326,24 @@ describeDb("blocking accounts", () => {
     expect((await getDb().select().from(tables.users))[0].status).toBe("unverified");
   });
 
+  it("unblocking a foreign company's account sends it back to review, not to active", async () => {
+    const user = await createUser({
+      status: "blocked",
+      country: "DE",
+      companyNumber: "DE123456789",
+    });
+    await loginAdminAs("editor@firma.bg", "editor");
+
+    await setUserBlockedAction(fd({ userId: user.id, blocked: "false" }));
+
+    expect((await getDb().select().from(tables.users))[0].status).toBe("pending_review");
+  });
+
   it("blocking a company ends the sessions of all its people", async () => {
     const a = await customerSession("a@firma.bg", "123456789");
     const b = await customerSession("b@firma.bg", "123456789");
     const other = await customerSession("c@drugafirma.bg", "987654321");
-    const company = (await getDb().select().from(tables.companies).where(eq(tables.companies.eik, "123456789")))[0];
+    const company = (await getDb().select().from(tables.companies).where(eq(tables.companies.companyNumber, "123456789")))[0];
     await loginAdminAs("editor@firma.bg", "editor");
 
     await setCompanyBlockedAction(fd({ companyId: company.id, blocked: "true" }));
@@ -342,7 +355,7 @@ describeDb("blocking accounts", () => {
     useJar(other);
     expect((await getCurrentUser())?.email).toBe("c@drugafirma.bg");
     const entry = (await auditRows()).find((r) => r.action === "company.block")!;
-    expect(entry.details).toMatchObject({ eik: "123456789" });
+    expect(entry.details).toMatchObject({ country: "BG", companyNumber: "123456789" });
   });
 
   it("a blocked company's people cannot log in again, and a cookie alone gives nothing", async () => {

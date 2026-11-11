@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { listCustomers } from "@/lib/admin/accounts";
+import { countryName, formatCompanyNumber, ruleFor } from "@/lib/company-number";
 import { requireAdmin } from "@/lib/auth/current";
 import { can } from "@/lib/permissions";
 import {
@@ -14,6 +15,7 @@ const STATUS_LABEL = {
   unverified: "Непотвърден имейл",
   active: "Активен",
   blocked: "Блокиран",
+  pending_review: "Чака одобрение",
 } as const;
 
 export default function AdminCustomersPage() {
@@ -59,7 +61,8 @@ async function Content() {
             <div>
               <h2>{c.name}</h2>
               <p className="text-sm text-secondary">
-                ЕИК {c.eik}
+                {countryName(c.country)} · {ruleFor(c.country).label}{" "}
+                {formatCompanyNumber(c.country, c.companyNumber)}
                 {c.blockedAt && (
                   <strong className="ml-2 text-ember-300">
                     Фирмата е блокирана
@@ -85,6 +88,7 @@ async function Content() {
                 className="flex flex-wrap items-center justify-between gap-2 py-2"
               >
                 <span>
+                  {u.fullName && <>{u.fullName}, </>}
                   {u.email}{" "}
                   <span className="text-secondary">
                     - {STATUS_LABEL[u.status]}

@@ -9,7 +9,7 @@ import { sentMails, tokenFromMail } from "@/test/mail-capture";
 import { createUser, fd, PASSWORD } from "@/test/factories";
 import { forgotPasswordAction } from "./forgot-password/actions";
 import { loginAction, logoutAction } from "./login/actions";
-import { registerAction } from "./register/actions";
+import { checkRegisterStepOneAction, registerAction } from "./register/actions";
 import { resetPasswordAction } from "./reset-password/actions";
 import { verifyEmailAction } from "./verify-email/actions";
 
@@ -19,10 +19,13 @@ const SESSION_COOKIE = "b2b_session";
 
 function registration(overrides: Record<string, string> = {}) {
   return fd({
-    companyName: "Тест ЕООД",
-    eik: "123456789",
+    fullName: "Иван Петров",
     email: "client@firma.bg",
     password: PASSWORD,
+    passwordConfirm: PASSWORD,
+    country: "BG",
+    companyName: "Тест ЕООД",
+    companyNumber: "123456789",
     "cf-turnstile-response": "ok",
     ...overrides,
   });
@@ -51,7 +54,12 @@ describeDb("registration", () => {
     expect(users[0]).toMatchObject({ email: "client@firma.bg", status: "unverified" });
     expect(users[0].passwordHash).toMatch(/^\$argon2id\$/);
     expect(companies).toHaveLength(1);
-    expect(companies[0]).toMatchObject({ eik: "123456789", name: "Тест ЕООД" });
+    expect(companies[0]).toMatchObject({
+      country: "BG",
+      companyNumber: "123456789",
+      name: "Тест ЕООД",
+    });
+    expect(users[0].fullName).toBe("Иван Петров");
     expect(sentMails).toHaveLength(1);
     expect(sentMails[0].to).toBe("client@firma.bg");
   });
@@ -78,7 +86,13 @@ describeDb("registration", () => {
     ["short password", { password: "Aa1" }, "password"],
     ["password without digit", { password: "Abcdefghij" }, "password"],
     ["password without upper case", { password: "abcdefg1h" }, "password"],
-    ["bad EIK", { eik: "12345" }, "eik"],
+    ["bad EIK", { companyNumber: "12345" }, "companyNumber"],
+    ["empty company number", { companyNumber: "" }, "companyNumber"],
+    ["VAT number in the wrong format", { country: "DE", companyNumber: "12345678" }, "companyNumber"],
+    ["EIN in the wrong format", { country: "US", companyNumber: "12-345678" }, "companyNumber"],
+    ["unknown country", { country: "XX" }, "country"],
+    ["empty full name", { fullName: " " }, "fullName"],
+    ["passwords that do not match", { passwordConfirm: "Zdravej8x" }, "passwordConfirm"],
     ["bad email", { email: "nope" }, "email"],
     ["empty company name", { companyName: " " }, "companyName"],
   ])("validates on the server: %s", async (_name, overrides, fieldName) => {
@@ -90,7 +104,7 @@ describeDb("registration", () => {
   });
 
   it("never sends the password back to the form", async () => {
-    const state = await register({ eik: "bad" });
+    const state = await register({ companyNumber: "bad" });
     expect(JSON.stringify(state)).not.toContain(PASSWORD);
     expect(state.values).not.toHaveProperty("password");
   });
@@ -151,6 +165,80 @@ describeDb("registration", () => {
   });
 });
 
+describeDb("registration, step 1", () => {
+  const stepOne = (overrides: Record<string, string> = {}) =>
+    checkRegisterStepOneAction(
+      initialFormState,
+      fd({
+        fullName: "Иван Петров",
+        email: "client@firma.bg",
+        password: PASSWORD,
+        passwordConfirm: PASSWORD,
+        ...overrides,
+      }),
+    );
+
+  it("accepts valid data without creating anything or sending mail", async () => {
+    expect((await stepOne()).status).toBe("success");
+    expect(await getDb().select().from(tables.users)).toHaveLength(0);
+    expect(sentMails).toHaveLength(0);
+  });
+
+  it.each([
+    ["empty full name", { fullName: "" }, "fullName"],
+    ["bad email", { email: "nope" }, "email"],
+    ["weak password", { password: "abc", passwordConfirm: "abc" }, "password"],
+    ["password with the email in it", { password: "Client@firma.bg1", passwordConfirm: "Client@firma.bg1" }, "password"],
+    ["passwords that do not match", { passwordConfirm: "Zdravej8x" }, "passwordConfirm"],
+  ])("rejects %s", async (_name, overrides: Record<string, string>, fieldName) => {
+    const state = await stepOne(overrides);
+    expect(state.status).toBe("error");
+    expect(state.fieldErrors?.[fieldName]).toBeTruthy();
+    expect(JSON.stringify(state)).not.toContain(overrides.password ?? PASSWORD);
+  });
+
+  it("gives the same answer for an email that is already registered", async () => {
+    const fresh = await stepOne();
+    await createUser();
+    const again = await stepOne();
+    expect({ status: again.status, message: again.message }).toEqual({
+      status: fresh.status,
+      message: fresh.message,
+    });
+  });
+});
+
+describeDb("registration by country", () => {
+  async function storedCompany() {
+    const companies = await getDb().select().from(tables.companies);
+    expect(companies).toHaveLength(1);
+    return companies[0];
+  }
+
+  it("stores an EU VAT number with its prefix, whatever the spacing", async () => {
+    expect((await register({ country: "DE", companyNumber: "de 123 456 789" })).status).toBe(
+      "success",
+    );
+    expect(await storedCompany()).toMatchObject({ country: "DE", companyNumber: "DE123456789" });
+  });
+
+  it("uses the EL prefix for Greece", async () => {
+    await register({ country: "GR", companyNumber: "123456789" });
+    expect((await storedCompany()).companyNumber).toBe("EL123456789");
+  });
+
+  it("stores the nine digits of a US EIN", async () => {
+    await register({ country: "US", companyNumber: "12-3456789" });
+    expect(await storedCompany()).toMatchObject({ country: "US", companyNumber: "123456789" });
+  });
+
+  it("keeps companies with the same number in different countries apart", async () => {
+    await register({ country: "US", companyNumber: "123456789" });
+    await register({ email: "second@firma.bg", country: "BG", companyNumber: "123456789" });
+    expect(await getDb().select().from(tables.companies)).toHaveLength(2);
+  });
+});
+
 describeDb("email verification", () => {
   async function registerAndGetToken() {
     await register();
@@ -168,6 +256,17 @@ describeDb("email verification", () => {
 
     const reuse = await verifyEmailAction(initialFormState, fd({ token }));
     expect(reuse.status).toBe("error");
+  });
+
+  it("sends a foreign company to manual review instead of activating it", async () => {
+    await register({ country: "DE", companyNumber: "123456789" });
+    const token = tokenFromMail(sentMails[0]);
+
+    const to = await redirectedTo(() => verifyEmailAction(initialFormState, fd({ token })));
+    expect(to).toBe("/pending-approval");
+    const [user] = await getDb().select().from(tables.users);
+    expect(user.status).toBe("pending_review");
+    expect(user.emailVerifiedAt).not.toBeNull();
   });
 
   it("rejects an expired token", async () => {
@@ -258,6 +357,16 @@ describeDb("customer login", () => {
     expect(cookieJar.has(SESSION_COOKIE)).toBe(false);
   });
 
+  it("does not log in a customer waiting for review", async () => {
+    await createUser({ status: "pending_review", country: "DE", companyNumber: "DE123456789" });
+
+    const { to, state } = await login("client@firma.bg", PASSWORD);
+
+    expect(to).toBeNull();
+    expect(state?.message).toMatch(/чака одобрение/);
+    expect(cookieJar.has(SESSION_COOKIE)).toBe(false);
+  });
+
   it("does not log in a blocked customer", async () => {
     await createUser({ status: "blocked" });
 
@@ -297,7 +406,7 @@ describeDb("customer login", () => {
 
   it("does not let failures on one account lock another one", async () => {
     await createUser({ email: "a@firma.bg" });
-    await createUser({ email: "b@firma.bg", eik: "123456789" });
+    await createUser({ email: "b@firma.bg", companyNumber: "123456789" });
     for (let i = 0; i < 5; i++) await login("a@firma.bg", "Wrong-pass1");
 
     expect((await login("b@firma.bg", PASSWORD)).to).toBe("/");
