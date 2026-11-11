@@ -6,6 +6,7 @@ import {
   redirectMock,
   resetRequest,
 } from "./next-mocks";
+import { companyRegister } from "./company-register";
 import { resetSentMails } from "./mail-capture";
 
 vi.mock("next/headers", () => ({ cookies: cookiesMock, headers: headersMock }));
@@ -29,6 +30,12 @@ vi.mock("@/lib/mail/send", async (importOriginal) => {
   return { ...real, sendMail: captureMail };
 });
 
+// The company register is a fake (src/test/company-register.ts).
+vi.mock("@/lib/company-check/provider", async () => {
+  const { companyRegister, fakeVerifier } = await import("./company-register");
+  return { getCompanyVerifier: () => (companyRegister.configured ? fakeVerifier : null) };
+});
+
 // The captcha token "ok" passes, anything else fails.
 vi.mock("@/lib/captcha", () => ({
   CAPTCHA_FIELD: "cf-turnstile-response",
@@ -42,11 +49,18 @@ const hasDb = !!process.env.TEST_DATABASE_URL;
 beforeEach(async () => {
   resetRequest();
   resetSentMails();
+  companyRegister.reset();
   if (hasDb) {
     const { getDb } = await import("@/db");
-    await getDb().execute(
-      sql`truncate table audit_log, product_prices, products, rate_limits, email_tokens, sessions, admin_recovery_codes, admins, users, companies restart identity cascade`,
-    );
+    // Every table of the app (also new ones), never drizzle's migration log.
+    await getDb().execute(sql`
+      do $$ declare names text; begin
+        select string_agg(format('%I', tablename), ', ') into names
+          from pg_tables where schemaname = 'public';
+        if names is not null then
+          execute 'truncate table ' || names || ' restart identity cascade';
+        end if;
+      end $$`);
   }
 });
 

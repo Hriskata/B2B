@@ -17,6 +17,27 @@ const when = new Intl.DateTimeFormat("bg-BG", {
 // Registrations waiting for manual review (every foreign company for now).
 // "Преглед" sees them; only "преглед + редакция" may decide (checked again by
 // the action on the server).
+// What the register said, for the admin who decides.
+function registryText(r: {
+  country: string;
+  registryState: string | null;
+  registryStatus: string | null;
+}): string {
+  const code = r.registryStatus ? ` (код ${r.registryStatus})` : "";
+  switch (r.registryState) {
+    case "active":
+      return `активна${code}`;
+    case "inactive":
+      return `НЕАКТИВНА${code}`;
+    case "unknown":
+      return `намерена, но статусът не е разпознат${code}; не е потвърдено, че е активна`;
+    case "unavailable":
+      return "регистърът не отговори; фирмата не е проверена";
+    default:
+      return r.country === "BG" ? "не е проверена" : "няма проверка (чуждестранна фирма)";
+  }
+}
+
 const NOTICES: Record<string, string> = {
   approve: "Регистрацията е одобрена. Клиентът е уведомен по имейл.",
   reject: "Регистрацията е отхвърлена. Клиентът е уведомен по имейл.",
@@ -77,6 +98,14 @@ async function Content() {
             <dd>{countryName(r.country)}</dd>
             <dt className="text-secondary">{ruleFor(r.country).label}</dt>
             <dd>{formatCompanyNumber(r.country, r.companyNumber)}</dd>
+            <dt className="text-secondary">Регистър</dt>
+            <dd>{registryText(r)}</dd>
+            {r.registryName && (
+              <>
+                <dt className="text-secondary">Име в регистъра</dt>
+                <dd>{r.registryName}</dd>
+              </>
+            )}
             <dt className="text-secondary">Лице</dt>
             <dd>{r.fullName ?? "-"}</dd>
             <dt className="text-secondary">Имейл</dt>

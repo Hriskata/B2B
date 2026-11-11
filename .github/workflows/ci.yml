@@ -53,3 +53,4 @@ jobs:
           MAIL_FROM: ci@ci.invalid
           TURNSTILE_SITE_KEY: ci
           TURNSTILE_SECRET_KEY: ci
+          COMPANYBOOK_API_KEY: ci

@@ -22,6 +22,7 @@ export async function createUser(
     companyNumber: string;
     fullName: string;
     companyName: string;
+    needsReview: boolean;
   }> = {},
 ) {
   const db = getDb();
@@ -50,6 +51,8 @@ export async function createUser(
       companyId: company.id,
       email,
       fullName: overrides.fullName ?? "Иван Петров",
+      // Like a registration: only a Bulgarian company can skip the review.
+      needsReview: overrides.needsReview ?? country !== "BG",
       passwordHash: await hashPassword(overrides.password ?? PASSWORD),
       status,
       emailVerifiedAt: status === "unverified" ? null : new Date(),

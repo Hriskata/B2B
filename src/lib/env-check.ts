@@ -19,6 +19,7 @@ export const SECRETS_THAT_MUST_DIFFER = [
   "TURNSTILE_SECRET_KEY",
   "TURNSTILE_SITE_KEY",
   "SMTP_PASS",
+  "COMPANYBOOK_API_KEY",
 ] as const;
 
 function validBase64Key(value: string): boolean {
@@ -39,6 +40,7 @@ export function checkEnvironment(kind: EnvKind, env: Vars, other?: Vars): Proble
     "MAIL_FROM",
     "TURNSTILE_SITE_KEY",
     "TURNSTILE_SECRET_KEY",
+    "COMPANYBOOK_API_KEY",
   ]) {
     if (!get(name)) bad(name, "is not set");
   }

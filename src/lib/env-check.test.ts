@@ -11,6 +11,7 @@ const good: Vars = {
   MAIL_FROM: "ODFFiber <no-reply@odffiber.bg>",
   TURNSTILE_SITE_KEY: "0x4AAAAAAAreal-site-key",
   TURNSTILE_SECRET_KEY: "0x4AAAAAAAreal-secret-key",
+  COMPANYBOOK_API_KEY: "made-up-register-key-for-the-test",
   TRUSTED_PROXY_COUNT: "1",
   ADMIN_2FA_DISABLED: "false",
   GA_MEASUREMENT_ID: "G-ABCD1234",
@@ -26,7 +27,7 @@ describe("checkEnvironment", () => {
 
   it("flags every missing required variable", () => {
     expect(names({})).toEqual(
-      expect.arrayContaining(["POSTGRES_PASSWORD", "APP_URL", "TOTP_ENCRYPTION_KEY", "SMTP_HOST", "MAIL_FROM", "TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY"]),
+      expect.arrayContaining(["POSTGRES_PASSWORD", "APP_URL", "TOTP_ENCRYPTION_KEY", "SMTP_HOST", "MAIL_FROM", "TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY", "COMPANYBOOK_API_KEY"]),
     );
   });
 
@@ -93,6 +94,7 @@ describe("checkEnvironment", () => {
       TURNSTILE_SITE_KEY: "0x4AAAAAAAstaging-site",
       TURNSTILE_SECRET_KEY: "0x4AAAAAAAstaging-secret",
       SMTP_PASS: "staging-pass",
+      COMPANYBOOK_API_KEY: "made-up-staging-register-key",
     };
 
     expect(checkEnvironment("production", good, staging)).toEqual([]);

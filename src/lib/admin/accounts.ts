@@ -66,7 +66,7 @@ export async function setUserBlocked(
     if (!found) return "not_found" as const;
     const { user } = found;
     const unblocked = user.emailVerifiedAt
-      ? statusAfterEmailConfirmed(found.country, user)
+      ? statusAfterEmailConfirmed(user)
       : "unverified";
     await tx
       .update(tables.users)
