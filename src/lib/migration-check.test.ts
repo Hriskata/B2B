@@ -20,6 +20,8 @@ describe("findUnsafeStatements", () => {
     ['TRUNCATE "a";', "deletes data"],
     ['DELETE FROM "a" WHERE true;', "deletes data"],
     ['alter table "a" rename column "b" to "c";', "renames"],
+    ['ALTER TABLE "a" ALTER "b" TYPE bigint;', "changes the type"],
+    ['ALTER TABLE "a" ALTER COLUMN "type" SET DATA TYPE text;', "changes the type"],
   ])("flags %s", (sql, rule) => {
     expect(rules(sql).some((r) => r.startsWith(rule))).toBe(true);
   });
@@ -34,6 +36,8 @@ describe("findUnsafeStatements", () => {
     `UPDATE "a" SET "c" = "b";`,
     '-- DROP TABLE "a" is only a comment\nSELECT 1;',
     '/* RENAME in a block comment */ SELECT 1;',
+    'ALTER TABLE "products" ALTER COLUMN "type" DROP NOT NULL;',
+    `ALTER TABLE "products" ALTER COLUMN "type" SET DEFAULT 'x';`,
   ])("allows %s", (sql) => {
     expect(rules(sql)).toEqual([]);
   });
@@ -77,6 +81,30 @@ describe("checkMigrations", () => {
     expect(result.warnings.map((f) => f.migration)).toEqual(["0009_contract"]);
   });
 
+  it("lets a contract note cover only the statement right after it", () => {
+    const sql = [
+      "-- contract: eik replaced by company_number in 0007",
+      'ALTER TABLE "x" DROP COLUMN "eik";--> statement-breakpoint',
+      'ALTER TABLE "y" RENAME COLUMN "p" TO "q";',
+    ].join("\n");
+    const result = checkMigrations([...migrations, { tag: "0010_mixed", sql }], "0009_contract");
+    expect(result.warnings.map((f) => f.statement)).toEqual(['ALTER TABLE "x" DROP COLUMN "eik"']);
+    expect(result.errors.map((f) => f.statement)).toEqual(['ALTER TABLE "y" RENAME COLUMN "p" TO "q"']);
+  });
+
+  it("does not take a note after the statement or in the middle of the file for the next one", () => {
+    const sql = [
+      'ALTER TABLE "x" DROP COLUMN "a"; -- contract: too late, after the statement',
+      'ALTER TABLE "x" ADD COLUMN "b" text;--> statement-breakpoint',
+      'ALTER TABLE "x" DROP COLUMN "c";',
+    ].join("\n");
+    const found = findUnsafeStatements("m", sql);
+    expect(found.map((f) => [f.line, f.contract])).toEqual([
+      [1, false],
+      [3, false],
+    ]);
+  });
+
   it("refuses a launch marker that is not in the journal", () => {
     expect(() => checkMigrations(migrations, "0005_missing")).toThrow(/not in the journal/);
   });
@@ -90,6 +118,13 @@ describe("checkMigrations", () => {
       tag,
       sql: readFileSync(path.join(dir, `${tag}.sql`), "utf8"),
     }));
-    expect(checkMigrations(all).errors).toEqual([]);
+    const result = checkMigrations(all);
+    expect(result.errors).toEqual([]);
+    // Before the launch: the rename of eik in 0006 is the only known change
+    // that would not be allowed after it (also catches a broken rule).
+    expect(result.warnings.map((f) => `${f.migration}:${f.line}`)).toEqual([
+      "0006_company_country_and_review:2",
+      "0006_company_country_and_review:3",
+    ]);
   });
 });

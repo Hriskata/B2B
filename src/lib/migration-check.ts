@@ -1,8 +1,8 @@
 // Finds database migrations that would break the previous version of the
 // code (docs/ENVIRONMENTS.md, "Migrations"). After the first production
 // launch a migration may only add things; renaming, dropping or tightening is
-// done in separate releases (expand / contract) and must be marked with a
-// "-- contract: <reason>" comment in the migration.
+// done in separate releases (expand / contract) and each such statement must
+// have a "-- contract: <reason>" comment line right before it.
 
 // The last migration applied before the first production launch. Set it at
 // launch (launch checklist). Until then (null) every finding is only a
@@ -14,6 +14,8 @@ export type Finding = {
   line: number;
   rule: string;
   statement: string;
+  // A "-- contract: <reason>" line stands right before this statement.
+  contract: boolean;
 };
 
 type Rule = { name: string; test: (sql: string) => boolean };
@@ -26,7 +28,8 @@ const RULES: Rule[] = [
   },
   {
     name: "changes the type of a column",
-    test: (s) => /\bALTER\s+COLUMN\b[\s\S]*\b(SET\s+DATA\s+)?TYPE\b/.test(s),
+    // ALTER [COLUMN] <name> [SET DATA] TYPE; a column named "type" is fine.
+    test: (s) => /\bALTER\s+(COLUMN\s+)?("[^"]+"|\w+)\s+(SET\s+DATA\s+)?TYPE\b/.test(s),
   },
   { name: "makes a column required (SET NOT NULL)", test: (s) => /\bSET\s+NOT\s+NULL\b/.test(s) },
   {
@@ -42,10 +45,12 @@ const RULES: Rule[] = [
 // The reason must be on the same line as the marker.
 const CONTRACT_NOTE = /^[ \t]*--[ \t]*contract:[ \t]*\S/im;
 
-// SQL comments are ignored, so a note cannot trigger or hide a rule. Line
-// breaks are kept, so line numbers stay right.
+// SQL comments are ignored, so a note cannot trigger or hide a rule. Comments
+// become spaces (line breaks kept), so offsets and line numbers match the
+// original text.
 function stripComments(sql: string): string {
-  return sql.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " ")).replace(/--[^\n]*/g, "");
+  const blank = (m: string) => m.replace(/[^\n]/g, " ");
+  return sql.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/--[^\n]*/g, blank);
 }
 
 export function hasContractNote(sql: string): boolean {
@@ -61,11 +66,21 @@ export function findUnsafeStatements(migration: string, sql: string): Finding[] 
   for (const part of code.split(";")) {
     const statement = part.trim();
     if (statement) {
-      const line = code.slice(0, offset + part.indexOf(statement)).split("\n").length;
+      const start = offset + part.indexOf(statement);
+      const line = code.slice(0, start).split("\n").length;
+      // A contract note covers only the statement right after it: the
+      // comment lines between the previous statement and this one.
+      const contract = hasContractNote(sql.slice(offset, start));
       const upper = statement.toUpperCase();
       for (const rule of RULES) {
         if (rule.test(upper)) {
-          findings.push({ migration, line, rule: rule.name, statement: statement.replace(/\s+/g, " ") });
+          findings.push({
+            migration,
+            line,
+            rule: rule.name,
+            statement: statement.replace(/\s+/g, " "),
+            contract,
+          });
         }
       }
     }
@@ -95,9 +110,10 @@ export function checkMigrations(
   }
   migrations.forEach((m, i) => {
     if (lastPrelaunch !== null && i <= launchIndex) return;
-    const findings = findUnsafeStatements(m.tag, m.sql);
-    const allowed = lastPrelaunch === null || hasContractNote(m.sql);
-    (allowed ? result.warnings : result.errors).push(...findings);
+    for (const finding of findUnsafeStatements(m.tag, m.sql)) {
+      const allowed = lastPrelaunch === null || finding.contract;
+      (allowed ? result.warnings : result.errors).push(finding);
+    }
   });
   return result;
 }
