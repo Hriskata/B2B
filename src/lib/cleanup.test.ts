@@ -32,9 +32,15 @@ describeDb("cleanupExpired", () => {
       token("used-old", new Date(Date.now() + DAY), ago(10 * DAY)),
     ]);
 
+    await db.insert(tables.companyCheckCache).values([
+      { eik: "111111111", provider: "test", found: true, checkedAt: ago(1000) }, // kept
+      { eik: "222222222", provider: "test", found: true, name: "ЕТ Иван", checkedAt: ago(2 * DAY) },
+    ]);
+
     const result = await cleanupExpired(db);
 
-    expect(result).toEqual({ sessions: 1, rateLimits: 1, emailTokens: 2 });
+    expect(result).toEqual({ sessions: 1, rateLimits: 1, emailTokens: 2, companyChecks: 1 });
+    expect((await db.select().from(tables.companyCheckCache)).map((c) => c.eik)).toEqual(["111111111"]);
     expect((await db.select().from(tables.sessions)).map((s) => s.tokenHash)).toEqual(["live"]);
     expect((await db.select().from(tables.rateLimits)).map((r) => r.key)).toEqual(["live"]);
     expect((await db.select().from(tables.emailTokens)).map((t) => t.tokenHash).sort()).toEqual([
@@ -58,6 +64,11 @@ describeDb("cleanupExpired", () => {
   });
 
   it("does nothing on an empty database", async () => {
-    expect(await cleanupExpired(getDb())).toEqual({ sessions: 0, rateLimits: 0, emailTokens: 0 });
+    expect(await cleanupExpired(getDb())).toEqual({
+      sessions: 0,
+      rateLimits: 0,
+      emailTokens: 0,
+      companyChecks: 0,
+    });
   });
 });

@@ -17,7 +17,7 @@ async function main() {
   try {
     const result = await cleanupExpired(db);
     console.log(
-      `Removed: ${result.sessions} sessions, ${result.rateLimits} rate-limit windows, ${result.emailTokens} email tokens.`,
+      `Removed: ${result.sessions} sessions, ${result.rateLimits} rate-limit windows, ${result.emailTokens} email tokens, ${result.companyChecks} company register answers.`,
     );
   } finally {
     await client.end();

@@ -10,8 +10,8 @@ import {
   registrationRejectedMail,
 } from "../mail/templates";
 
-// Manual review of registrations: every foreign company for now (decided
-// 10.11.2026); in phase 2 also Bulgarian ones whose company check failed.
+// Manual review of registrations: every foreign company (decided 10.11.2026)
+// and every Bulgarian one the register did not confirm as active.
 
 export type PendingRegistration = {
   userId: string;
@@ -23,6 +23,9 @@ export type PendingRegistration = {
   country: string;
   companyNumber: string;
   companyBlockedAt: Date | null;
+  registryState: string | null;
+  registryStatus: string | null;
+  registryName: string | null;
 };
 
 export async function listPendingRegistrations(): Promise<PendingRegistration[]> {
@@ -37,6 +40,9 @@ export async function listPendingRegistrations(): Promise<PendingRegistration[]>
       country: tables.companies.country,
       companyNumber: tables.companies.companyNumber,
       companyBlockedAt: tables.companies.blockedAt,
+      registryState: tables.companies.registryState,
+      registryStatus: tables.companies.registryStatus,
+      registryName: tables.companies.registryName,
     })
     .from(tables.users)
     .innerJoin(tables.companies, eq(tables.companies.id, tables.users.companyId))
@@ -108,6 +114,9 @@ export async function reviewRegistration(
         company: company.name,
         country: company.country,
         companyNumber: company.companyNumber,
+        // What the register said when the admin decided.
+        registryState: company.registryState,
+        registryStatus: company.registryStatus,
       },
     });
     return user;

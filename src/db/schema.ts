@@ -50,6 +50,13 @@ export const companies = pgTable(
     // number elsewhere; stored in the form returned by parseCompanyNumber.
     companyNumber: text("company_number").notNull(),
     name: text().notNull(),
+    // Last answer of the company register (Bulgaria only; null = not checked):
+    // active, inactive, unknown (a status code not mapped yet) or unavailable.
+    registryState: text("registry_state"),
+    // The raw status code and name as the register gave them.
+    registryStatus: text("registry_status"),
+    registryName: text("registry_name"),
+    registryCheckedAt: timestamptz("registry_checked_at"),
     // Set when an admin blocks the whole company: all its users lose access.
     blockedAt: timestamptz("blocked_at"),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
@@ -71,6 +78,11 @@ export const users = pgTable(
     passwordHash: text("password_hash").notNull(),
     status: userStatus().notNull().default("unverified"),
     emailVerifiedAt: timestamptz("email_verified_at"),
+    // An admin must approve this profile before it becomes active (foreign
+    // company, or the register check did not confirm an active company).
+    // Safe default: a row written without it (old code, a future import)
+    // waits for an admin instead of being approved.
+    needsReview: boolean("needs_review").notNull().default(true),
     // Set by the manual review; unblocking returns to the reviewed state.
     approvedAt: timestamptz("approved_at"),
     rejectedAt: timestamptz("rejected_at"),
@@ -138,6 +150,17 @@ export const emailTokens = pgTable(
   },
   (t) => [index("email_tokens_subject_idx").on(t.subjectType, t.subjectId, t.purpose)],
 );
+
+// Answers of the company register by EIK, so a repeated check does not use
+// the daily request limit. Only definite answers (found / not found).
+export const companyCheckCache = pgTable("company_check_cache", {
+  eik: text().primaryKey(),
+  provider: text().notNull(),
+  found: boolean().notNull(),
+  status: text(),
+  name: text(),
+  checkedAt: timestamptz("checked_at").notNull().defaultNow(),
+});
 
 export const rateLimits = pgTable("rate_limits", {
   key: text().primaryKey(),

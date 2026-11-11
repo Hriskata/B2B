@@ -55,6 +55,7 @@ services:
       MAIL_FROM: ${MAIL_FROM:?Set MAIL_FROM in the env file}
       TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:?Set TURNSTILE_SITE_KEY in the env file}
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:?Set TURNSTILE_SECRET_KEY in the env file}
+      COMPANYBOOK_API_KEY: ${COMPANYBOOK_API_KEY:?Set COMPANYBOOK_API_KEY in the env file}
       TRUSTED_PROXY_COUNT: ${TRUSTED_PROXY_COUNT:-1}
       # Always off on a server; the app refuses to start with it on anyway.
       ADMIN_2FA_DISABLED: "false"

@@ -107,6 +107,17 @@ export async function registerAction(prev: FormState, formData: FormData): Promi
   if (result === "rate_limited") {
     return failure(prev, MESSAGES.rateLimited, { values });
   }
+  // CLAUDE.md: a company that does not exist gets a clear message. It depends
+  // only on the company number (a public register), never on the email.
+  if (result === "company_not_found") {
+    return failure(prev, MESSAGES.invalidInput, {
+      fieldErrors: {
+        companyNumber:
+          "Не намерихме фирма с този ЕИК в регистъра. Проверете номера.",
+      },
+      values,
+    });
+  }
 
   // Same text whether the email was new, unverified or already registered.
   return success(

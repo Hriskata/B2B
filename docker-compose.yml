@@ -49,6 +49,7 @@ services:
       MAIL_FROM: ${MAIL_FROM:?Set MAIL_FROM in .env}
       TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:?Set TURNSTILE_SITE_KEY in .env}
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:?Set TURNSTILE_SECRET_KEY in .env}
+      COMPANYBOOK_API_KEY: ${COMPANYBOOK_API_KEY:-}
       TRUSTED_PROXY_COUNT: ${TRUSTED_PROXY_COUNT:-1}
       ADMIN_2FA_DISABLED: ${ADMIN_2FA_DISABLED:-false}
       # Optional. Analytics loads only after the visitor accepts cookies.

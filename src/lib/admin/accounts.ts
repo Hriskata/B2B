@@ -58,15 +58,14 @@ export async function setUserBlocked(
   const result = await getDb().transaction(async (tx) => {
     const found = (
       await tx
-        .select({ user: tables.users, country: tables.companies.country })
+        .select({ user: tables.users })
         .from(tables.users)
-        .innerJoin(tables.companies, eq(tables.companies.id, tables.users.companyId))
         .where(eq(tables.users.id, userId))
     )[0];
     if (!found) return "not_found" as const;
     const { user } = found;
     const unblocked = user.emailVerifiedAt
-      ? statusAfterEmailConfirmed(found.country, user)
+      ? statusAfterEmailConfirmed(user)
       : "unverified";
     await tx
       .update(tables.users)
