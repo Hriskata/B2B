@@ -400,6 +400,21 @@ describeDb("admin password reset", () => {
     expect(admin.passwordMustChange).toBe(false);
   });
 
+  it("limits new-password submissions per IP, apart from the customer form", async () => {
+    const { resetPasswordAction } = await import("@/app/(bg)/(auth)/reset-password/actions");
+    const values = { token: "x".repeat(43), password: "Nova-parola9", confirm: "Nova-parola9" };
+    // Customers on the same IP do not use up the admins' limit.
+    for (let i = 0; i < 21; i++) await resetPasswordAction(initialFormState, fd(values));
+    for (let i = 0; i < 20; i++) {
+      expect((await adminResetPasswordAction(initialFormState, fd(values))).message).toMatch(
+        /невалидна или е изтекла/,
+      );
+    }
+    expect((await adminResetPasswordAction(initialFormState, fd(values))).message).toMatch(
+      /Твърде много опити/,
+    );
+  });
+
   it("a customer reset token does not work on the admin reset", async () => {
     await createUser();
     await createAdmin();

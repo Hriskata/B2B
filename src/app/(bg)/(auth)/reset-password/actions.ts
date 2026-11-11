@@ -16,7 +16,7 @@ export async function resetPasswordAction(
   const password = field(formData, "password");
   const confirm = field(formData, "confirm");
 
-  if (!(await hit(`reset-submit:ip:${await getClientIp()}`, LIMITS.resetSubmitPerIp))) {
+  if (!(await hit(`reset-submit:user:ip:${await getClientIp()}`, LIMITS.resetSubmitPerIp))) {
     return failure(prev, MESSAGES.rateLimited);
   }
 

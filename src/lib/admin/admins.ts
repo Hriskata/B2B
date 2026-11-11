@@ -50,6 +50,10 @@ export async function reauthenticateAdmin(
   const passwordOk = !!me && (await verifyPassword(me.passwordHash, password));
   const codeOk =
     passwordOk &&
+    // Its own key, so mistakes here do not lock the login. Trade-off (accepted,
+    // docs/UNVERIFIED.md): login and re-checks together allow 2 x 5 wrong codes
+    // per 15 minutes; a re-check also needs a session and the password, and
+    // the reauth key above (5 failures) always stops it first.
     (getEnv().ADMIN_2FA_DISABLED || (await verifySecondFactor(adminId, code, `${key}:2fa`)) === "ok");
   if (!passwordOk || !codeOk) {
     await hit(key, LIMITS.mfaFailuresPerAdmin);

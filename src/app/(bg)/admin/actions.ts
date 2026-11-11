@@ -137,7 +137,7 @@ export async function adminResetPasswordAction(
   prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  if (!(await hit(`reset-submit:ip:${await getClientIp()}`, LIMITS.resetSubmitPerIp))) {
+  if (!(await hit(`reset-submit:admin:ip:${await getClientIp()}`, LIMITS.resetSubmitPerIp))) {
     return failure(prev, MESSAGES.rateLimited);
   }
   const password = field(formData, "password");
