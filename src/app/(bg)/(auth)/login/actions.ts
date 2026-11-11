@@ -35,6 +35,8 @@ export async function loginAction(prev: FormState, formData: FormData): Promise<
         "Профилът ви чака одобрение от нашия екип. Ще можете да влезете след одобрението.",
         { values },
       );
+    case "rejected":
+      return failure(prev, "Регистрацията ви не е одобрена. Свържете се с нас.", { values });
     case "blocked":
       return failure(prev, "Профилът е блокиран. Свържете се с нас.", { values });
     case "rate_limited":

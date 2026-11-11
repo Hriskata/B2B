@@ -1,6 +1,7 @@
 import "server-only";
 import { and, eq } from "drizzle-orm";
 import { getDb, tables } from "@/db";
+import { notifyAdminsOfPendingRegistration } from "../admin/registrations";
 import { sendMail } from "../mail/send";
 import { alreadyRegisteredMail, resetPasswordMail, verifyEmailMail } from "../mail/templates";
 import { hashPassword, verifyAgainstDummy, verifyPassword } from "../password";
@@ -28,10 +29,18 @@ export type RegisterInput = {
 
 // Status once the email is confirmed (also restored by unblocking). Only
 // Bulgarian companies are approved without a person; foreign companies wait
-// for manual review (decided 10.11.2026). Phase 2 adds the CompanyVerifier
-// for Bulgaria and the admin approval that ends the review.
-export function statusAfterEmailConfirmed(country: string): "active" | "pending_review" {
-  return country === "BG" ? "active" : "pending_review";
+// for manual review (decided 10.11.2026) until an admin approves or rejects
+// them. Phase 2 adds the CompanyVerifier for Bulgaria.
+export function statusAfterEmailConfirmed(
+  country: string,
+  review: { approvedAt: Date | null; rejectedAt: Date | null } = {
+    approvedAt: null,
+    rejectedAt: null,
+  },
+): "active" | "pending_review" | "rejected" {
+  if (review.rejectedAt) return "rejected";
+  if (review.approvedAt || country === "BG") return "active";
+  return "pending_review";
 }
 
 // Phase 1 only: no company check yet. Phase 2 inserts the CompanyVerifier
@@ -62,6 +71,7 @@ export async function registerCustomer(input: RegisterInput): Promise<"ok" | "ra
     } else if (existing.status === "active" || existing.status === "pending_review") {
       await sendMail(alreadyRegisteredMail(input.email));
     }
+    // Blocked and rejected accounts get no mail (assumption, see docs/PLAN.md 2А).
     return "ok";
   }
 
@@ -109,29 +119,36 @@ export async function registerCustomer(input: RegisterInput): Promise<"ok" | "ra
   return "ok";
 }
 
-// "active" or "pending_review" for a valid link (whatever the account's state
-// was), "invalid" otherwise.
+// For a valid link: the account's status after it ("active",
+// "pending_review", or unchanged, e.g. "blocked"). "invalid" otherwise.
 export async function verifyCustomerEmail(
   token: string,
-): Promise<"active" | "pending_review" | "invalid"> {
-  return getDb().transaction(async (tx) => {
+): Promise<(typeof tables.users.$inferSelect)["status"] | "invalid"> {
+  const result = await getDb().transaction(async (tx) => {
     const userId = await consumeEmailToken(token, "verify_email", "user", tx);
-    if (!userId) return "invalid";
-    const { country } = (
+    if (!userId) return null;
+    const { user, country } = (
       await tx
-        .select({ country: tables.companies.country })
+        .select({ user: tables.users, country: tables.companies.country })
         .from(tables.users)
         .innerJoin(tables.companies, eq(tables.companies.id, tables.users.companyId))
         .where(eq(tables.users.id, userId))
     )[0];
-    const status = statusAfterEmailConfirmed(country);
-    await tx
+    const status = statusAfterEmailConfirmed(country, user);
+    const changed = await tx
       .update(tables.users)
       .set({ status, emailVerifiedAt: new Date() })
       // Only unverified accounts change; a blocked account stays blocked.
-      .where(and(eq(tables.users.id, userId), eq(tables.users.status, "unverified")));
-    return status;
+      .where(and(eq(tables.users.id, userId), eq(tables.users.status, "unverified")))
+      .returning({ id: tables.users.id });
+    return { userId, status: changed.length > 0 ? status : user.status, changed: changed.length > 0 };
   });
+  if (!result) return "invalid";
+  // Told once, when the registration starts waiting.
+  if (result.changed && result.status === "pending_review") {
+    await notifyAdminsOfPendingRegistration(result.userId);
+  }
+  return result.status;
 }
 
 export type LoginResult =
@@ -139,6 +156,7 @@ export type LoginResult =
   | "invalid"
   | "unverified"
   | "pending_review"
+  | "rejected"
   | "blocked"
   | "rate_limited";
 
@@ -181,6 +199,7 @@ export async function loginCustomer(
   // Only someone who knows the password learns these two states.
   if (user.status === "blocked" || found.companyBlockedAt) return "blocked";
   if (user.status === "pending_review") return "pending_review";
+  if (user.status === "rejected") return "rejected";
   if (user.status !== "active") return "unverified";
 
   await createSession("user", user.id);
@@ -195,7 +214,9 @@ export async function requestCustomerPasswordReset(email: string, ip: string): P
   if (!allowed) return;
 
   const user = (await getDb().select().from(tables.users).where(eq(tables.users.email, email)))[0];
-  if (!user || user.status !== "active") return;
+  // An account waiting for review may reset its password too (the status
+  // does not change).
+  if (!user || (user.status !== "active" && user.status !== "pending_review")) return;
 
   const token = await createEmailToken("reset_password", "user", user.id);
   await sendMail(

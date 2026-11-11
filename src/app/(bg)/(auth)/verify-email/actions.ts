@@ -10,5 +10,7 @@ export async function verifyEmailAction(prev: FormState, formData: FormData): Pr
   if (result === "invalid") {
     return failure(prev, "Връзката е невалидна или е изтекла.");
   }
-  redirect(result === "pending_review" ? "/pending-approval" : "/login?notice=email-verified");
+  if (result === "pending_review") redirect("/pending-approval");
+  // A blocked or rejected account is not told anything new here.
+  redirect(result === "active" ? "/login?notice=email-verified" : "/login");
 }

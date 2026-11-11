@@ -93,3 +93,51 @@ export function twoFactorResetMail(to: string, resetBy: string): Mail {
     ].join("\n"),
   };
 }
+
+// Manual review (phase 2). DRAFT texts, like the rest of this file.
+
+export function registrationPendingAdminMail(
+  to: string,
+  registration: { companyName: string; country: string; email: string },
+): Mail {
+  return {
+    to,
+    subject: "Нова регистрация чака преглед",
+    text: [
+      "Здравейте,",
+      "",
+      "Нова регистрация чака ръчен преглед:",
+      `Фирма: ${registration.companyName}`,
+      `Държава: ${registration.country}`,
+      `Имейл: ${registration.email}`,
+      "",
+      `Преглед: ${getEnv().APP_URL.replace(/\/$/, "")}/admin/registrations`,
+    ].join("\n"),
+  };
+}
+
+export function registrationApprovedMail(to: string): Mail {
+  return {
+    to,
+    subject: "Регистрацията ви е одобрена",
+    text: [
+      "Здравейте,",
+      "",
+      "Регистрацията на вашата фирма е одобрена. Вече можете да влезете и да виждате цените:",
+      `${getEnv().APP_URL.replace(/\/$/, "")}/login`,
+    ].join("\n"),
+  };
+}
+
+export function registrationRejectedMail(to: string): Mail {
+  return {
+    to,
+    subject: "Регистрацията ви не е одобрена",
+    text: [
+      "Здравейте,",
+      "",
+      "За съжаление не можем да одобрим регистрацията на вашата фирма.",
+      "Ако смятате, че това е грешка, свържете се с нас.",
+    ].join("\n"),
+  };
+}
