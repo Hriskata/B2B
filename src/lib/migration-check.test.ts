@@ -233,4 +233,43 @@ describe("journal order", () => {
     );
     expect(result.errors.map((f) => f.migration)).toEqual(["0002_b"]);
   });
+
+  it("names every late migration, also when it is equal or newer than the one just before", () => {
+    const result = checkMigrations(
+      [
+        { tag: "0001_a", sql: "SELECT 1;", when: 500 },
+        { tag: "0002_b", sql: "SELECT 1;", when: 100 },
+        { tag: "0003_c", sql: "SELECT 1;", when: 300 },
+        { tag: "0004_d", sql: "SELECT 1;", when: 500 },
+      ],
+      null,
+    );
+    expect(result.errors.map((f) => f.migration)).toEqual(["0002_b", "0003_c", "0004_d"]);
+  });
+});
+
+describe("findings from the review of the scanner", () => {
+  it("a note at the end of one statement's line does not cover the next statement", () => {
+    const sql = [
+      "-- contract: drop x",
+      `ALTER TABLE "a" DROP COLUMN "x"; -- contract: same reason`,
+      `ALTER TABLE "a" DROP COLUMN "y";`,
+    ].join("\n");
+    expect(findUnsafeStatements("m", sql).map((f) => f.contract)).toEqual([true, false]);
+  });
+
+  it.each([
+    `ALTER TABLE "a" ADD COLUMN "b" text UNIQUE;`,
+    `ALTER TABLE "a" ADD COLUMN "b" uuid REFERENCES "c"("id");`,
+    `ALTER TABLE "a" ADD COLUMN "b" int DEFAULT 0 CHECK ("b" > 0);`,
+    `ALTER TABLE "a" ADD EXCLUDE USING gist ("b" WITH &&);`,
+  ])("flags a constraint written inside the change: %s", (sql) => {
+    expect(rules(sql).some((r) => r.startsWith("adds a constraint"))).toBe(true);
+  });
+
+  it("does not read x$y$ in a name as the start of a $$ block", () => {
+    expect(rules("ALTER TABLE x$y$ ADD COLUMN z int; DROP TABLE b;")).toEqual([
+      "drops something (DROP NOT NULL is allowed)",
+    ]);
+  });
 });

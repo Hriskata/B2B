@@ -78,10 +78,14 @@ const RULES: Rule[] = [
       const table = new RegExp(
         String.raw`^ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:ONLY\s+)?(${NAME})`,
       ).exec(named)?.[1];
-      return (
-        table !== undefined &&
-        !createdHere.has(table) &&
-        /\bADD\s+(CONSTRAINT\b|UNIQUE\b|CHECK\b|FOREIGN\s+KEY\b|PRIMARY\s+KEY\b)/.test(s)
+      if (table === undefined || createdHere.has(table)) return false;
+      if (/\bADD\s+(CONSTRAINT\b|UNIQUE\b|CHECK\b|EXCLUDE\b|FOREIGN\s+KEY\b|PRIMARY\s+KEY\b)/.test(s)) {
+        return true;
+      }
+      // Also written inside the new column (PRIMARY KEY there is only possible
+      // on a column that fills itself, see the required-column rule).
+      return clauses(s).some(
+        (c) => /\bADD\s+COLUMN\b/.test(c) && /\b(UNIQUE|CHECK|REFERENCES)\b/.test(c),
       );
     },
   },
@@ -173,7 +177,12 @@ export function maskSql(sql: string): { code: string; comments: string } {
           blank(sql[i++]);
         }
       }
-    } else if (ch === "$" && /^\$(?:[A-Za-z_]\w*)?\$/.test(sql.slice(i))) {
+    } else if (
+      ch === "$" &&
+      // Not inside a name like x$y (PostgreSQL does not start a $$ there).
+      !/[\w$]/.test(sql[i - 1] ?? "") &&
+      /^\$(?:[A-Za-z_]\w*)?\$/.test(sql.slice(i))
+    ) {
       const tag = /^\$(?:[A-Za-z_]\w*)?\$/.exec(sql.slice(i))![0];
       const close = sql.indexOf(tag, i + tag.length);
       const stop = close === -1 ? sql.length : close + tag.length;
@@ -206,7 +215,13 @@ export function findUnsafeStatements(migration: string, sql: string): Finding[] 
       const line = code.slice(0, start).split("\n").length;
       // A contract note covers only the statement right after it: the
       // comment lines between the previous statement and this one.
-      const contract = CONTRACT_NOTE.test(comments.slice(offset, start));
+      // The window starts on the next line: a note at the end of the previous
+      // statement's line belongs to that statement, not to this one.
+      // (The first statement has no previous one: its window is the start.)
+      const lineAfter = comments.indexOf("\n", offset);
+      const from =
+        offset === 0 ? 0 : lineAfter === -1 || lineAfter > start ? start : lineAfter + 1;
+      const contract = CONTRACT_NOTE.test(comments.slice(from, start));
       // Tested masked, shown as written (strings and names included).
       const original = sql.slice(start, start + statement.length).replace(/\s+/g, " ");
       const upper = statement.toUpperCase();
@@ -249,12 +264,13 @@ export function checkMigrations(
   if (lastPrelaunch !== null && launchIndex === -1) {
     throw new Error(`LAST_PRELAUNCH_MIGRATION "${lastPrelaunch}" is not in the journal`);
   }
+  let newest: number | undefined;
   migrations.forEach((m, i) => {
     // drizzle applies a migration only if it is newer than the last applied
     // one: an older date (e.g. from a long-lived branch) would be skipped
-    // silently on a database that already has the later ones.
-    const before = migrations[i - 1]?.when;
-    if (m.when !== undefined && before !== undefined && m.when <= before) {
+    // silently on a database that already has the later ones. Compared with
+    // the newest so far, so every late migration is named.
+    if (m.when !== undefined && newest !== undefined && m.when <= newest) {
       result.errors.push({
         migration: m.tag,
         line: 1,
@@ -263,6 +279,7 @@ export function checkMigrations(
         contract: false,
       });
     }
+    if (m.when !== undefined) newest = Math.max(newest ?? m.when, m.when);
     if (lastPrelaunch !== null && i <= launchIndex) return;
     for (const finding of findUnsafeStatements(m.tag, m.sql)) {
       const allowed = lastPrelaunch === null || finding.contract;
