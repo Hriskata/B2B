@@ -518,8 +518,8 @@
     height: 22px;
     border-radius: 9999px;
     background: var(--ember-600);
-    border: 2px solid #fff;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+    /* Light ring for contrast on the render; no dark drop shadow (style guide). */
+    border: 2px solid var(--text-on-ember);
     transition:
       transform 0.2s,
       background-color 0.2s,
@@ -530,11 +530,11 @@
     transform: scale(1.2);
     background: var(--ember-500);
     box-shadow:
-      0 0 0 6px rgba(215, 0, 15, 0.28),
-      0 0 24px 8px rgba(215, 0, 15, 0.35);
+      0 0 0 6px color-mix(in srgb, var(--ember-500) 28%, transparent),
+      var(--glow-sm);
   }
   .showcase-mask {
-    fill: rgba(215, 0, 15, 0.35);
+    fill: color-mix(in srgb, var(--ember-500) 35%, transparent);
     stroke: var(--ember-500);
     stroke-width: 2;
   }
