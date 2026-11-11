@@ -119,7 +119,8 @@ describe("productTitle", () => {
 
 describe("series summary", () => {
   it("leaves out the fiber range when no model has a fiber count (no Infinity)", () => {
-    expect(getDict("bg").seriesPage.summary(1, null, "")).toBe("1 модела.");
+    expect(getDict("bg").seriesPage.summary(1, null, "")).toBe("1 модел.");
+    expect(getDict("en").seriesPage.summary(1, null, "")).toBe("1 model.");
     expect(getDict("en").seriesPage.summary(2, { min: 12, max: 48 }, "1RU")).toBe(
       "2 models, from 12 to 48 fibers, height 1RU.",
     );

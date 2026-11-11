@@ -53,7 +53,7 @@ export const bg = {
     empty: "Няма публикувани модели в тази серия.",
     // fibers is null when no model of the series has a fiber count.
     summary: (count: number, fibers: { min: number; max: number } | null, units: string) =>
-      `${count} модела${fibers ? `, от ${fibers.min} до ${fibers.max} влакна` : ""}${units ? `, височина ${units}` : ""}.`,
+      `${count} ${count === 1 ? "модел" : "модела"}${fibers ? `, от ${fibers.min} до ${fibers.max} влакна` : ""}${units ? `, височина ${units}` : ""}.`,
     commonTitle: "Общи характеристики на всички серии",
     common: [
       "Shuttered адаптери (със защитен затвор)",

@@ -54,7 +54,7 @@ export const en: Dict = {
     empty: "There are no published models in this series.",
     // fibers is null when no model of the series has a fiber count.
     summary: (count: number, fibers: { min: number; max: number } | null, units: string) =>
-      `${count} models${fibers ? `, from ${fibers.min} to ${fibers.max} fibers` : ""}${units ? `, height ${units}` : ""}.`,
+      `${count} ${count === 1 ? "model" : "models"}${fibers ? `, from ${fibers.min} to ${fibers.max} fibers` : ""}${units ? `, height ${units}` : ""}.`,
     commonTitle: "Features common to all series",
     common: [
       "Shuttered adapters (with a protective shutter)",

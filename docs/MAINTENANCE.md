@@ -61,9 +61,9 @@ docker compose start app
 
 ```
 # официален (за тестовия: -p b2b-staging и --env-file .env.staging)
-docker compose -p b2b-production -f docker-compose.server.yml --env-file .env.production \n  run --rm migrate npx tsx scripts/create-admin.ts --email <имейл> --role editor
+docker compose -p b2b-production -f docker-compose.server.yml --env-file .env.production run --rm migrate npx tsx scripts/create-admin.ts --email <имейл> --role editor
 
-docker compose -p b2b-production -f docker-compose.server.yml --env-file .env.production \n  run --rm -T migrate npx tsx scripts/cleanup.ts
+docker compose -p b2b-production -f docker-compose.server.yml --env-file .env.production run --rm -T migrate npx tsx scripts/cleanup.ts
 ```
 
 Пробвано локално със същата услуга (`docker compose run --rm -T migrate npx tsx scripts/cleanup.ts`); на истински сървър още не.
