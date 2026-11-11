@@ -580,6 +580,16 @@ describeDb("customer password reset", () => {
     expect(to).toBe("/login?notice=password-reset");
   });
 
+  it("limits new-password submissions per IP address", async () => {
+    const submit = () =>
+      resetPasswordAction(
+        initialFormState,
+        fd({ token: "x".repeat(43), password: "Nova-parola9", confirm: "Nova-parola9" }),
+      );
+    for (let i = 0; i < 20; i++) expect((await submit()).message).toMatch(/невалидна или е изтекла/);
+    expect((await submit()).message).toMatch(/Твърде много опити/);
+  });
+
   it("refuses a new password that contains the email, without using up the link", async () => {
     await createUser();
     const token = await requestToken();

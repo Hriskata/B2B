@@ -40,10 +40,17 @@ export function RegisterForm({
 
   // The button that was pressed disappears with its step: put the focus on
   // the first field of the new step instead of losing it.
+  // With an error on step 1, the focus goes to the first field that has it.
   useEffect(() => {
+    const withError =
+      step === 1 ? STEP_ONE_FIELDS.find((name) => stepOneState.fieldErrors?.[name]) : undefined;
+    if (withError) {
+      document.getElementById(`f-${withError}`)?.focus();
+      return;
+    }
     if (stepChanges === 0) return;
     document.getElementById(step === 1 ? "f-fullName" : "f-country")?.focus();
-  }, [stepChanges, step]);
+  }, [stepChanges, step, stepOneState]);
 
   // The final submit can still fail on a step 1 field: show it on step 1.
   if (state.nonce !== seenNonce) {

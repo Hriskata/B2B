@@ -13,6 +13,7 @@ import { createSession, destroySession } from "@/lib/auth/session";
 import { completeTotpSetup, verifySecondFactor } from "@/lib/auth/totp";
 import { verifyCaptchaFromForm } from "@/lib/captcha";
 import { getClientIp } from "@/lib/client-ip";
+import { hit, LIMITS } from "@/lib/rate-limit";
 import { failure, MESSAGES, success, type FormState } from "@/lib/form-state";
 import { validatePassword } from "@/lib/password";
 import { PASSWORD_RULES_TEXT } from "@/lib/password-policy";
@@ -136,6 +137,9 @@ export async function adminResetPasswordAction(
   prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
+  if (!(await hit(`reset-submit:ip:${await getClientIp()}`, LIMITS.resetSubmitPerIp))) {
+    return failure(prev, MESSAGES.rateLimited);
+  }
   const password = field(formData, "password");
   const email = await emailForAdminResetToken(field(formData, "token"));
   const check = validatePassword(password, email ? { email } : undefined);
