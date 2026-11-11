@@ -34,7 +34,9 @@ async function Form({
       notice={
         notice === "password-reset"
           ? "Паролата е сменена. Влезте с новата парола."
-          : undefined
+          : notice === "invite-accepted"
+            ? "Паролата е зададена. Влезте и настройте двуфакторна автентикация."
+            : undefined
       }
     />
   );

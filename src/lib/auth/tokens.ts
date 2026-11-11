@@ -3,12 +3,13 @@ import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import { getDb, tables, type Db } from "@/db";
 import { hashToken, randomToken } from "../crypto";
 
-export type TokenPurpose = "verify_email" | "reset_password";
+export type TokenPurpose = "verify_email" | "reset_password" | "admin_invite";
 export type TokenSubject = "user" | "admin";
 
 export const TOKEN_TTL_SECONDS: Record<TokenPurpose, number> = {
   verify_email: 24 * 60 * 60,
   reset_password: 60 * 60, // proposal in the checklist: up to 60 minutes
+  admin_invite: 72 * 60 * 60, // proposal: 3 days to accept an admin invite
 };
 
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];

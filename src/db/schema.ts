@@ -33,9 +33,12 @@ export const subjectType = pgEnum("subject_type", ["user", "admin"]);
 // "full" is a normal session. The two mfa_* stages are short-lived sessions
 // issued after the admin password check and before the second factor.
 export const sessionStage = pgEnum("session_stage", ["full", "mfa_verify", "mfa_setup"]);
+// admin_invite: the link a new admin gets to set their own password
+// (decided 11.11.2026, instead of a temporary password).
 export const emailTokenPurpose = pgEnum("email_token_purpose", [
   "verify_email",
   "reset_password",
+  "admin_invite",
 ]);
 
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true });

@@ -3,21 +3,24 @@ import { asc, eq } from "drizzle-orm";
 import { getDb, tables } from "@/db";
 import { writeAudit, type Actor } from "../audit";
 import { revokeAllSessions, revokeOtherSessions } from "../auth/session";
+import {
+  consumeEmailToken,
+  createEmailToken,
+  TOKEN_TTL_SECONDS,
+  usableTokenSubject,
+} from "../auth/tokens";
+import { randomToken } from "../crypto";
 import { verifySecondFactor } from "../auth/totp";
 import { getEnv } from "../env";
 import { sendMail } from "../mail/send";
-import { adminAddedMail, twoFactorResetMail } from "../mail/templates";
+import { adminInviteMail, twoFactorResetMail } from "../mail/templates";
 import { hashPassword, validatePassword, verifyPassword } from "../password";
 import { hit, isLimited, LIMITS, reset } from "../rate-limit";
 
-// SECURITY NOTE: a password that everybody who reads this file knows. It is
-// accepted only for a new admin and only until their first login: the account
-// is created with passwordMustChange, every admin page then redirects to the
-// password change, and the default is rejected as a new password (it is on the
-// common-passwords list). Until that first login whoever knows the email and
-// this password could sign in first, so the window should be short: tell the
-// new admin right away, and prefer a one-time link (open decision).
-export const DEFAULT_ADMIN_PASSWORD = "Password123";
+// A new admin from the portal gets an emailed one-time link to set their own
+// password (decided 11.11.2026; the temporary password is gone). Until then
+// the account has an unknown random password, so nobody can log in to it, and
+// passwordMustChange marks "has not set a password yet" (an invite waits).
 
 export async function listAdmins() {
   return getDb()
@@ -127,7 +130,9 @@ export async function createAdminAccount(
   if (taken.length > 0) return { ok: false, error: "exists" };
   const reauth = await reauthenticateAdmin(actor.id, password, code);
   if (reauth !== "ok") return { ok: false, error: reauth };
-  const passwordHash = await hashPassword(DEFAULT_ADMIN_PASSWORD);
+  // A random password nobody knows: the account cannot be used until the
+  // new admin sets their own through the invite link.
+  const passwordHash = await hashPassword(randomToken());
   const created = await getDb().transaction(async (tx) => {
     const [row] = await tx
       .insert(tables.admins)
@@ -141,11 +146,71 @@ export async function createAdminAccount(
       targetId: row.id,
       details: { targetEmail: email, role },
     });
-    return row.id;
+    const token = await createEmailToken("admin_invite", "admin", row.id, tx);
+    return { id: row.id, token };
   });
   if (!created) return { ok: false, error: "exists" };
-  await sendMail(adminAddedMail(email, actor.email));
-  return { ok: true, id: created };
+  await sendMail(
+    adminInviteMail(email, actor.email, created.token, TOKEN_TTL_SECONDS.admin_invite / 3600),
+  );
+  return { ok: true, id: created.id };
+}
+
+// A new invite link for an admin who has not set a password yet (the first
+// one expired or got lost). Only the newest link works. Journaled.
+export async function resendAdminInvite(
+  actor: Actor,
+  adminId: string,
+): Promise<"ok" | "not_found" | "not_waiting"> {
+  if (!/^[0-9a-f-]{36}$/i.test(adminId)) return "not_found";
+  const admin = (await getDb().select().from(tables.admins).where(eq(tables.admins.id, adminId)))[0];
+  if (!admin) return "not_found";
+  if (!admin.passwordMustChange || admin.status !== "active") return "not_waiting";
+  const token = await getDb().transaction(async (tx) => {
+    await writeAudit(tx, actor, {
+      action: "admin.invite_resend",
+      targetType: "admin",
+      targetId: adminId,
+      details: { targetEmail: admin.email },
+    });
+    return createEmailToken("admin_invite", "admin", adminId, tx);
+  });
+  await sendMail(
+    adminInviteMail(admin.email, actor.email, token, TOKEN_TTL_SECONDS.admin_invite / 3600),
+  );
+  return "ok";
+}
+
+// Email of the admin an invite link belongs to (to check the new password
+// against it). Does not use the link.
+export async function emailForAdminInviteToken(token: string): Promise<string | null> {
+  const adminId = await usableTokenSubject(token, "admin_invite", "admin");
+  if (!adminId) return null;
+  const admin = (await getDb().select().from(tables.admins).where(eq(tables.admins.id, adminId)))[0];
+  return admin?.email ?? null;
+}
+
+// The new admin sets their own password with the invite link (once). The
+// account then works with that password and the 2FA set up at first login.
+export async function acceptAdminInvite(token: string, password: string): Promise<boolean> {
+  const passwordHash = await hashPassword(password);
+  return getDb().transaction(async (tx) => {
+    const adminId = await consumeEmailToken(token, "admin_invite", "admin", tx);
+    if (!adminId) return false;
+    const [admin] = await tx
+      .update(tables.admins)
+      .set({ passwordHash, passwordMustChange: false })
+      .where(eq(tables.admins.id, adminId))
+      .returning({ email: tables.admins.email });
+    // The password itself never goes into the journal.
+    await writeAudit(tx, { id: adminId, email: admin.email }, {
+      action: "admin.password_change",
+      targetType: "admin",
+      targetId: adminId,
+      details: { reason: "invite" },
+    });
+    return true;
+  });
 }
 
 export type ChangePasswordResult = "ok" | "wrong_password" | "weak" | "same" | "rate_limited";
