@@ -11,8 +11,9 @@ export function SiteHeader({ lang }: { lang: Lang }) {
   const t = getDict(lang).header;
   return (
     <header className="border-b border-line bg-base">
-      <nav className="mx-auto flex w-full max-w-[1120px] items-center justify-between gap-4 px-4 py-3">
-        <div className="flex items-center gap-5">
+      {/* Smaller gaps under 640 px, so the header fits a 320 px phone. */}
+      <nav className="mx-auto flex w-full max-w-[1120px] items-center justify-between gap-2 px-4 py-3 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-5">
           <Link
             href={localePath(lang, "/")}
             className="t-card-title text-primary hover:text-primary"
@@ -41,12 +42,14 @@ export function SiteHeader({ lang }: { lang: Lang }) {
             {t.faq}
           </Link>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
           <Suspense fallback={null}>
             <LanguageSwitch lang={lang} />
           </Suspense>
           {/* Reads the session cookie, so it streams in behind Suspense and the rest of the page stays static. */}
-          <Suspense fallback={<span className="h-6 w-32" aria-hidden />}>
+          {/* The placeholder is not wider than the guest buttons (only "Вход" on a
+              phone), so the page does not grow sideways while it loads. */}
+          <Suspense fallback={<span className="inline-block h-10 w-16 sm:w-48" aria-hidden />}>
             <AuthLinks lang={lang} />
           </Suspense>
         </div>
@@ -74,8 +77,8 @@ async function AuthLinks({ lang }: { lang: Lang }) {
     );
   }
   return (
-    <form action={logoutAction} className="flex items-center gap-3 text-sm">
-      <span className="truncate" title={user.companyName}>
+    <form action={logoutAction} className="flex min-w-0 items-center gap-3 text-sm">
+      <span className="hidden max-w-[14rem] truncate sm:inline" title={user.companyName}>
         {user.email}
       </span>
       <button type="submit" className="btn btn-secondary">

@@ -17,7 +17,9 @@ export function LanguageSwitch({ lang }: { lang: Lang }) {
       aria-label={t.ariaLabel}
       className="t-small"
     >
-      {t.label}
+      {/* The language code on a phone, where the header has little room. */}
+      <span className="sm:hidden">{t.short}</span>
+      <span className="hidden sm:inline">{t.label}</span>
     </Link>
   );
 }
