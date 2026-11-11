@@ -7,7 +7,12 @@ import { alreadyRegisteredMail, resetPasswordMail, verifyEmailMail } from "../ma
 import { hashPassword, verifyAgainstDummy, verifyPassword } from "../password";
 import { hit, isLimited, LIMITS, reset } from "../rate-limit";
 import { createSession, revokeAllSessions } from "./session";
-import { consumeEmailToken, createEmailToken, TOKEN_TTL_SECONDS } from "./tokens";
+import {
+  consumeEmailToken,
+  createEmailToken,
+  TOKEN_TTL_SECONDS,
+  usableTokenSubject,
+} from "./tokens";
 
 const PG_UNIQUE_VIOLATION = "23505";
 
@@ -222,6 +227,15 @@ export async function requestCustomerPasswordReset(email: string, ip: string): P
   await sendMail(
     resetPasswordMail(email, token, TOKEN_TTL_SECONDS.reset_password / 60, "user"),
   );
+}
+
+// Email of the account a reset link belongs to, so the new password can be
+// checked against it (it must not contain the email). Does not use the link.
+export async function emailForCustomerResetToken(token: string): Promise<string | null> {
+  const userId = await usableTokenSubject(token, "reset_password", "user");
+  if (!userId) return null;
+  const user = (await getDb().select().from(tables.users).where(eq(tables.users.id, userId)))[0];
+  return user?.email ?? null;
 }
 
 // The password is validated by the caller before this runs, so a weak

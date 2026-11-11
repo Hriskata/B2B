@@ -96,8 +96,7 @@ async function Models({ seriesKey, lang }: { seriesKey: string; lang: Lang }) {
       <p className="mt-3 max-w-2xl text-secondary">
         {t.summary(
           products.length,
-          Math.min(...fibers),
-          Math.max(...fibers),
+          fibers.length > 0 ? { min: Math.min(...fibers), max: Math.max(...fibers) } : null,
           units.map((u) => `${u}RU`).join(", "),
         )}
       </p>

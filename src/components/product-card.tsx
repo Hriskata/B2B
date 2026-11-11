@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { PublicProduct } from "@/lib/catalog";
-import { localePath, type Lang } from "@/i18n";
+import { getDict, localePath, type Lang } from "@/i18n";
 import { productDescription } from "@/lib/product-text";
 import { Price } from "./prices";
 import { ProductImage } from "./product-image";
@@ -17,7 +17,11 @@ export function ProductCard({
   return (
     <li className="card card-interactive flex flex-col overflow-hidden p-3">
       <Link href={href} className="block" aria-label={product.name}>
-        <ProductImage sku={product.sku} alt={product.name} />
+        <ProductImage
+          sku={product.sku}
+          alt={product.name}
+          placeholder={getDict(lang).product.photoPlaceholder}
+        />
       </Link>
       <div className="flex flex-1 flex-col gap-2 px-2 pb-2 pt-4">
         <h2 className="t-card-title">

@@ -1,8 +1,9 @@
 // Amounts are stored as integer cents of a currency (EUR by default). The
 // shown format (with or without VAT, wording) is an open decision.
 
-export function formatMoney(amountCents: number, currency: string): string {
-  return new Intl.NumberFormat("bg-BG", { style: "currency", currency }).format(amountCents / 100);
+// locale: the page language ("bg-BG" shows 12,50 €, "en-GB" shows €12.50).
+export function formatMoney(amountCents: number, currency: string, locale = "bg-BG"): string {
+  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(amountCents / 100);
 }
 
 export const MAX_PRICE_CENTS = 999_999_999; // 9 999 999,99

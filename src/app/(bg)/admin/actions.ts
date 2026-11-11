@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import {
   loginAdmin,
   requestAdminPasswordReset,
+  emailForAdminResetToken,
   resetAdminPassword,
 } from "@/lib/auth/admin";
 import { changeAdminPassword } from "@/lib/admin/admins";
@@ -136,7 +137,8 @@ export async function adminResetPasswordAction(
   formData: FormData,
 ): Promise<FormState> {
   const password = field(formData, "password");
-  const check = validatePassword(password);
+  const email = await emailForAdminResetToken(field(formData, "token"));
+  const check = validatePassword(password, email ? { email } : undefined);
   if (!check.ok) {
     return failure(prev, MESSAGES.invalidInput, { fieldErrors: { password: check.message } });
   }

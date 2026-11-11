@@ -191,12 +191,13 @@ export async function reviewRegistrationAction(formData: FormData): Promise<void
   if (!auth.ok) return;
   const decision = field(formData, "decision");
   if (decision !== "approve" && decision !== "reject") return;
-  await reviewRegistration(
+  const result = await reviewRegistration(
     { id: auth.admin.id, email: auth.admin.email },
     field(formData, "userId"),
     decision,
   );
-  refresh();
+  // Another admin may have decided first: say so, the earlier decision stands.
+  redirect(`/admin/registrations?notice=${result === "ok" ? decision : "already-decided"}`);
 }
 
 // Adds an admin with the default password; the new admin must change it at
@@ -216,8 +217,18 @@ export async function createAdminAction(prev: FormState, formData: FormData): Pr
     return failure(prev, MESSAGES.invalidInput, { fieldErrors, values });
   }
 
-  const result = await createAdminAccount({ id: auth.admin.id, email: auth.admin.email }, email.data, role);
+  const result = await createAdminAccount(
+    { id: auth.admin.id, email: auth.admin.email },
+    email.data,
+    role,
+    field(formData, "password"),
+    field(formData, "code"),
+  );
   if (!result.ok) {
+    if (result.error === "rate_limited") return failure(prev, MESSAGES.rateLimited, { values });
+    if (result.error === "invalid_credentials") {
+      return failure(prev, "Невалидна парола или код.", { values });
+    }
     return failure(prev, MESSAGES.invalidInput, {
       fieldErrors: { email: "Вече има админ с този имейл." },
       values,

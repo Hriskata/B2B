@@ -22,10 +22,11 @@ vi.mock("next/cache", () => ({
   refresh: () => {},
 }));
 
-// Mail is captured instead of sent.
-vi.mock("@/lib/mail/send", async () => {
+// Mail is captured instead of sent; the transport settings stay real.
+vi.mock("@/lib/mail/send", async (importOriginal) => {
   const { captureMail } = await import("./mail-capture");
-  return { sendMail: captureMail };
+  const real = await importOriginal<typeof import("@/lib/mail/send")>();
+  return { ...real, sendMail: captureMail };
 });
 
 // The captcha token "ok" passes, anything else fails.

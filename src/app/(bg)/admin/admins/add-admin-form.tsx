@@ -41,6 +41,25 @@ export function AddAdminForm() {
           </p>
         )}
       </div>
+      {/* The server asks for these again: an open session alone is not enough. */}
+      <Field
+        name="password"
+        label="Вашата парола"
+        type="password"
+        autoComplete="current-password"
+        state={state}
+        maxLength={128}
+      />
+      <Field
+        name="code"
+        label="Вашият код за 2FA"
+        autoComplete="one-time-code"
+        inputMode="numeric"
+        required={false}
+        hint="6 цифри от приложението. (При изключена 2FA за тестване може да е празно.)"
+        state={state}
+        maxLength={64}
+      />
       <p className="text-sm text-secondary">
         Новият админ получава временна парола (ще я видите след добавянето). При
         първия вход настройва 2FA и е длъжен веднага да смени паролата. Ролята

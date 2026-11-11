@@ -51,8 +51,9 @@ export const bg = {
     metaDescription: (name: string) => `Модели от серия ${name}: параметри, влакна и височина.`,
     loading: "Зареждане…",
     empty: "Няма публикувани модели в тази серия.",
-    summary: (count: number, min: number, max: number, units: string) =>
-      `${count} модела, от ${min} до ${max} влакна${units ? `, височина ${units}` : ""}.`,
+    // fibers is null when no model of the series has a fiber count.
+    summary: (count: number, fibers: { min: number; max: number } | null, units: string) =>
+      `${count} ${count === 1 ? "модел" : "модела"}${fibers ? `, от ${fibers.min} до ${fibers.max} влакна` : ""}${units ? `, височина ${units}` : ""}.`,
     commonTitle: "Общи характеристики на всички серии",
     common: [
       "Shuttered адаптери (със защитен затвор)",
@@ -101,6 +102,7 @@ export const bg = {
     notFoundTitle: "Продуктът не е намерен",
     back: "← Към каталога",
     inquiry: "Запитване за този модел",
+    photoPlaceholder: "Снимка",
   },
   specs: {
     ports: "Портове",

@@ -28,6 +28,14 @@ async function loginAs(
   return made;
 }
 
+// Moves the clock one 30-second step ahead, so a fresh code can be used
+// after the one spent at login (a used code cannot be replayed).
+async function freshCode(secret: string) {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(Date.now() + 60_000);
+  return codeFor(secret, Math.floor(Date.now() / 1000));
+}
+
 const adminsInDb = () => getDb().select().from(tables.admins);
 const auditRows = () => getDb().select().from(tables.auditLog);
 const productForm = () =>
@@ -35,9 +43,12 @@ const productForm = () =>
 
 describeDb("adding an admin from the portal", () => {
   it("an editor adds an admin with the default password, a forced change, a journal entry and a mail without the password", async () => {
-    const { admin } = await loginAs("editor@firma.bg", PASSWORD, { role: "editor" });
+    const { admin, secret } = await loginAs("editor@firma.bg", PASSWORD, { role: "editor" });
 
-    const state = await createAdminAction(initialFormState, fd({ email: "New.Admin@Firma.bg", role: "viewer" }));
+    const state = await createAdminAction(
+      initialFormState,
+      fd({ email: "New.Admin@Firma.bg", role: "viewer", password: PASSWORD, code: await freshCode(secret) }),
+    );
 
     expect(state.status).toBe("success");
     expect(state.message).toContain(DEFAULT_ADMIN_PASSWORD);
@@ -53,6 +64,27 @@ describeDb("adding an admin from the portal", () => {
     expect(mail.text).not.toContain(DEFAULT_ADMIN_PASSWORD);
   });
 
+  it("needs the editor's own password and a current 2FA code (an open session is not enough)", async () => {
+    const { secret } = await loginAs("editor@firma.bg", PASSWORD, { role: "editor" });
+
+    const none = await createAdminAction(initialFormState, fd({ email: "x@firma.bg", role: "viewer" }));
+    const wrongPassword = await createAdminAction(
+      initialFormState,
+      fd({ email: "x@firma.bg", role: "viewer", password: "Wrong-pass9", code: await freshCode(secret) }),
+    );
+    const wrongCode = await createAdminAction(
+      initialFormState,
+      fd({ email: "x@firma.bg", role: "viewer", password: PASSWORD, code: "000000" }),
+    );
+
+    for (const state of [none, wrongPassword, wrongCode]) {
+      expect(state.status).toBe("error");
+      expect(state.message).toMatch(/Невалидна парола или код/);
+    }
+    expect(await adminsInDb()).toHaveLength(1);
+    expect(sentMails.filter((m) => m.to === "x@firma.bg")).toHaveLength(0);
+  });
+
   it("a viewer cannot add an admin (server refuses, nothing is stored)", async () => {
     await loginAs("viewer@firma.bg", PASSWORD, { role: "viewer" });
 
@@ -63,9 +95,12 @@ describeDb("adding an admin from the portal", () => {
   });
 
   it("refuses an existing email, a bad email and an unknown role", async () => {
-    await loginAs("editor@firma.bg", PASSWORD, { role: "editor" });
+    const { secret } = await loginAs("editor@firma.bg", PASSWORD, { role: "editor" });
 
-    const dup = await createAdminAction(initialFormState, fd({ email: "EDITOR@firma.bg", role: "viewer" }));
+    const dup = await createAdminAction(
+      initialFormState,
+      fd({ email: "EDITOR@firma.bg", role: "viewer", password: PASSWORD, code: await freshCode(secret) }),
+    );
     const bad = await createAdminAction(initialFormState, fd({ email: "not-an-email", role: "viewer" }));
     const role = await createAdminAction(initialFormState, fd({ email: "a@firma.bg", role: "root" }));
 

@@ -580,6 +580,26 @@ describeDb("customer password reset", () => {
     expect(to).toBe("/login?notice=password-reset");
   });
 
+  it("refuses a new password that contains the email, without using up the link", async () => {
+    await createUser();
+    const token = await requestToken();
+
+    const state = await resetPasswordAction(
+      initialFormState,
+      fd({ token, password: "Client@firma.bg1", confirm: "Client@firma.bg1" }),
+    );
+    expect(state.status).toBe("error");
+    expect(state.fieldErrors?.password).toBeTruthy();
+
+    const to = await redirectedTo(() =>
+      resetPasswordAction(
+        initialFormState,
+        fd({ token, password: "Nova-parola9", confirm: "Nova-parola9" }),
+      ),
+    );
+    expect(to).toBe("/login?notice=password-reset");
+  });
+
   it("rejects mismatching confirmation, expired and invented tokens", async () => {
     await createUser();
     const token = await requestToken();

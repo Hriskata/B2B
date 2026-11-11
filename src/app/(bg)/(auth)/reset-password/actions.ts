@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { resetCustomerPassword } from "@/lib/auth/customer";
+import { emailForCustomerResetToken, resetCustomerPassword } from "@/lib/auth/customer";
 import { failure, MESSAGES, type FormState } from "@/lib/form-state";
 import { validatePassword } from "@/lib/password";
 import { field } from "@/lib/validation";
@@ -15,7 +15,8 @@ export async function resetPasswordAction(
   const confirm = field(formData, "confirm");
 
   // Check the password first: a weak one must not use up the one-time link.
-  const check = validatePassword(password);
+  const email = await emailForCustomerResetToken(token);
+  const check = validatePassword(password, email ? { email } : undefined);
   if (!check.ok) {
     return failure(prev, MESSAGES.invalidInput, { fieldErrors: { password: check.message } });
   }

@@ -128,9 +128,12 @@ async function Numbers({ lang }: { lang: Lang }) {
   );
   if (products.length === 0 || fibers.length === 0) return null;
   const nf = new Intl.NumberFormat(dict.localeTag, { useGrouping: false });
+  // A number is shown only when at least one model has it (no "-Infinity").
   const items: [string, string][] = [
     [String(products.length), dict.home.stats.models],
-    [nf.format(Math.max(...density)), dict.home.stats.density],
+    ...(density.length > 0
+      ? [[nf.format(Math.max(...density)), dict.home.stats.density] as [string, string]]
+      : []),
     [nf.format(Math.max(...fibers)), dict.home.stats.panel],
   ];
   return (

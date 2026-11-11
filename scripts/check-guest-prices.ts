@@ -7,6 +7,8 @@
 // It also fails if it finds no products at all, so an empty catalog cannot
 // make the check pass by accident.
 
+import { SHARED_PATHS } from "../src/i18n";
+
 const BASE = (process.env.BASE_URL ?? "http://localhost:3200").replace(/\/$/, "");
 
 // An amount next to a currency, or a price-like key in JSON.
@@ -48,10 +50,13 @@ async function main() {
   scan(front.url, front.body);
 
   const links = [...new Set([...home.body.matchAll(/href="(\/products\/[a-z0-9-]+)"/g)].map((m) => m[1]))];
-  if (links.length === 0) throw new Error("No product links found on the home page.");
+  if (links.length === 0) throw new Error("No product links found in the catalog (/products).");
+  const series = [...new Set([...home.body.matchAll(/href="(\/series\/[a-z0-9-]+)"/g)].map((m) => m[1]))];
+  if (series.length === 0) throw new Error("No series links found in the catalog (/products).");
 
-  // Every product page, in both languages, plus the English front pages.
-  for (const link of [...links, ...links.map((l) => `/en${l}`), "/en", "/en/products"]) {
+  // Every product and series page and every shared page, in both languages.
+  const bgPaths = [...links, ...series, ...SHARED_PATHS];
+  for (const link of [...bgPaths, ...bgPaths.map((l) => (l === "/" ? "/en" : `/en${l}`))]) {
     const page = await get(link);
     if (page.res.status !== 200) throw new Error(`GET ${link} returned ${page.res.status}`);
     scan(page.url, page.body);
