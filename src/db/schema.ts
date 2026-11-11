@@ -103,6 +103,10 @@ export const admins = pgTable("admins", {
   // Set for an admin added from the portal with the default password: every
   // admin page redirects to the password change until it is done.
   passwordMustChange: boolean("password_must_change").notNull().default(false),
+  // An account for automated checks during development (admin:create --test,
+  // local only). Every journal entry it makes goes to the "development" part
+  // of the journal, apart from the changes people make by hand.
+  isTest: boolean("is_test").notNull().default(false),
   // AES-256-GCM encrypted TOTP secret (see lib/crypto.ts). Set when setup
   // starts; totpEnabledAt is set only after the first code is confirmed.
   totpSecretEnc: text("totp_secret_enc"),
@@ -233,7 +237,14 @@ export const auditLog = pgTable(
     targetType: text("target_type").notNull(),
     targetId: text("target_id"),
     details: jsonb().$type<Record<string, string | number | boolean | null>>().notNull().default({}),
+    // "portal": a person through the admin portal; "dev": a test account
+    // (admins.is_test) during development. Fixed when the entry is written,
+    // only by writeAudit (no CHECK: rule 9, no constraint on an existing table).
+    source: text().$type<"portal" | "dev">().notNull().default("portal"),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
-  (t) => [index("audit_log_created_at_idx").on(t.createdAt)],
+  (t) => [
+    index("audit_log_created_at_idx").on(t.createdAt),
+    index("audit_log_source_created_at_idx").on(t.source, t.createdAt),
+  ],
 );

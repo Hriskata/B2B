@@ -6,9 +6,9 @@
 // Safe to run again: existing products are left as they are. It refuses to
 // run unless APP_URL is localhost, so it cannot fill a real database.
 import { createDb } from "../src/db/create";
+import { isLocalAppUrl } from "../src/lib/local-url";
 import { productPrices, products } from "../src/db/schema";
 
-const LOCAL_URL = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/;
 
 const SAMPLE_TEXT =
   "Примерно описание на продукта. Текстът е временен и ще бъде заменен с описанието от собственика на продукта.";
@@ -31,7 +31,7 @@ async function main() {
     console.error("DATABASE_URL is not set (use the .env file).");
     process.exit(1);
   }
-  if (!LOCAL_URL.test(process.env.APP_URL ?? "")) {
+  if (!isLocalAppUrl(process.env.APP_URL)) {
     console.error("Refusing to seed: APP_URL is not http://localhost or http://127.0.0.1.");
     process.exit(1);
   }

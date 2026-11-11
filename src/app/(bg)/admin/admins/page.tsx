@@ -55,6 +55,9 @@ async function Content() {
                 {a.id === me.id && (
                   <span className="ml-2 text-sm font-normal">(вие)</span>
                 )}
+                {a.isTest && (
+                  <span className="pill ml-2 align-middle">тестов акаунт</span>
+                )}
               </p>
               <p className="text-sm text-secondary">
                 {ROLE_LABEL[a.role]} ·{" "}

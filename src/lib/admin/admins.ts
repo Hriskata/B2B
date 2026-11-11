@@ -31,6 +31,7 @@ export async function listAdmins() {
       role: tables.admins.role,
       status: tables.admins.status,
       passwordMustChange: tables.admins.passwordMustChange,
+      isTest: tables.admins.isTest,
       totpEnabledAt: tables.admins.totpEnabledAt,
       createdAt: tables.admins.createdAt,
     })

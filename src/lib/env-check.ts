@@ -3,11 +3,12 @@
 // servers must differ. Pure functions (no server-only), shared by
 // scripts/check-env.ts and the tests. Messages name variables, never values.
 
+import { isLocalAppUrl } from "./local-url";
+
 export type EnvKind = "staging" | "production";
 export type Vars = Record<string, string | undefined>;
 export type Problem = { variable: string; message: string };
 
-const LOCAL_URL = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/;
 // Cloudflare's public Turnstile TEST keys (always pass / always fail / block).
 const TURNSTILE_TEST_KEY = /^[123]x0{10,}/;
 const WEAK_PASSWORD = /^(change.?me|password|postgres|b2b|secret|admin|test)/i;
@@ -47,7 +48,7 @@ export function checkEnvironment(kind: EnvKind, env: Vars, other?: Vars): Proble
 
   const url = get("APP_URL");
   if (url) {
-    if (LOCAL_URL.test(url)) bad("APP_URL", "points to localhost");
+    if (isLocalAppUrl(url)) bad("APP_URL", "points to localhost");
     else if (!url.startsWith("https://")) bad("APP_URL", "must be https (cookies are Secure only over https)");
   }
 
