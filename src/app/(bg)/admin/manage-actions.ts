@@ -216,8 +216,18 @@ export async function createAdminAction(prev: FormState, formData: FormData): Pr
     return failure(prev, MESSAGES.invalidInput, { fieldErrors, values });
   }
 
-  const result = await createAdminAccount({ id: auth.admin.id, email: auth.admin.email }, email.data, role);
+  const result = await createAdminAccount(
+    { id: auth.admin.id, email: auth.admin.email },
+    email.data,
+    role,
+    field(formData, "password"),
+    field(formData, "code"),
+  );
   if (!result.ok) {
+    if (result.error === "rate_limited") return failure(prev, MESSAGES.rateLimited, { values });
+    if (result.error === "invalid_credentials") {
+      return failure(prev, "Невалидна парола или код.", { values });
+    }
     return failure(prev, MESSAGES.invalidInput, {
       fieldErrors: { email: "Вече има админ с този имейл." },
       values,

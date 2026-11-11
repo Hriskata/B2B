@@ -36,6 +36,29 @@ export async function listAdmins() {
 
 export type ResetResult = "ok" | "invalid_credentials" | "rate_limited" | "not_found" | "self";
 
+// The logged-in admin proves who they are again, before a sensitive change:
+// their own password AND a current 2FA code (the local test switch
+// ADMIN_2FA_DISABLED waives only the code). Failures are limited per admin.
+export async function reauthenticateAdmin(
+  adminId: string,
+  password: string,
+  code: string,
+): Promise<"ok" | "invalid_credentials" | "rate_limited"> {
+  const key = `reauth:admin:${adminId}`;
+  if (await isLimited(key, LIMITS.mfaFailuresPerAdmin.limit)) return "rate_limited";
+  const me = (await getDb().select().from(tables.admins).where(eq(tables.admins.id, adminId)))[0];
+  const passwordOk = !!me && (await verifyPassword(me.passwordHash, password));
+  const codeOk =
+    passwordOk &&
+    (getEnv().ADMIN_2FA_DISABLED || (await verifySecondFactor(adminId, code)) === "ok");
+  if (!passwordOk || !codeOk) {
+    await hit(key, LIMITS.mfaFailuresPerAdmin);
+    return "invalid_credentials";
+  }
+  await reset(key);
+  return "ok";
+}
+
 // Admin B resets the 2FA of admin A. B must prove who they are again with
 // their own password AND a current 2FA code (the password alone is not
 // enough; the local test switch ADMIN_2FA_DISABLED waives only the code).
@@ -50,20 +73,10 @@ export async function resetAdminTwoFactor(
 ): Promise<ResetResult> {
   if (targetId === actor.id) return "self";
 
-  const key = `reauth:admin:${actor.id}`;
-  if (await isLimited(key, LIMITS.mfaFailuresPerAdmin.limit)) return "rate_limited";
+  const reauth = await reauthenticateAdmin(actor.id, password, code);
+  if (reauth !== "ok") return reauth;
 
   const db = getDb();
-  const me = (await db.select().from(tables.admins).where(eq(tables.admins.id, actor.id)))[0];
-  const passwordOk = !!me && (await verifyPassword(me.passwordHash, password));
-  const codeOk =
-    passwordOk &&
-    (getEnv().ADMIN_2FA_DISABLED || (await verifySecondFactor(actor.id, code)) === "ok");
-  if (!passwordOk || !codeOk) {
-    await hit(key, LIMITS.mfaFailuresPerAdmin);
-    return "invalid_credentials";
-  }
-  await reset(key);
 
   if (!/^[0-9a-f-]{36}$/i.test(targetId)) return "not_found";
   const target = (await db.select().from(tables.admins).where(eq(tables.admins.id, targetId)))[0];
@@ -89,7 +102,9 @@ export async function resetAdminTwoFactor(
   return "ok";
 }
 
-export type CreateAdminResult = { ok: true; id: string } | { ok: false; error: "exists" };
+export type CreateAdminResult =
+  | { ok: true; id: string }
+  | { ok: false; error: "exists" | "invalid_credentials" | "rate_limited" };
 
 // Adds an admin with the default password and the chosen role. The password is
 // never put in the journal or in the email. Journaled in the same transaction.
@@ -97,7 +112,13 @@ export async function createAdminAccount(
   actor: Actor,
   email: string,
   role: "viewer" | "editor",
+  // The creating admin's own password and 2FA code: an open session alone
+  // (e.g. an unattended laptop) must not be enough to add a lasting account.
+  password: string,
+  code: string,
 ): Promise<CreateAdminResult> {
+  const reauth = await reauthenticateAdmin(actor.id, password, code);
+  if (reauth !== "ok") return { ok: false, error: reauth };
   const passwordHash = await hashPassword(DEFAULT_ADMIN_PASSWORD);
   const created = await getDb().transaction(async (tx) => {
     const [row] = await tx
