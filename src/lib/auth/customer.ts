@@ -1,5 +1,6 @@
 import "server-only";
 import { and, eq } from "drizzle-orm";
+import { after } from "next/server";
 import { getDb, tables } from "@/db";
 import { notifyAdminsOfPendingRegistration } from "../admin/registrations";
 import { checkCompany, type CompanyCheck } from "../company-check";
@@ -96,6 +97,10 @@ export async function registerCustomer(
     await db.select().from(tables.users).where(eq(tables.users.email, input.email))
   )[0];
 
+  // Mails go out after the answer (after(): the server also waits for them
+  // before it shuts down), so the mail server's time no longer shows which
+  // branch ran (e.g. a blocked or rejected account gets no mail). The
+  // database work still differs a little between branches.
   if (existing) {
     if (existing.status === "unverified") {
       // A fresh answer can only add the need for a review, never remove it:
@@ -105,11 +110,11 @@ export async function registerCustomer(
         await db.update(tables.users).set({ needsReview: true }).where(eq(tables.users.id, existing.id));
       }
       const token = await createEmailToken("verify_email", "user", existing.id);
-      await sendMail(
-        verifyEmailMail(input.email, token, TOKEN_TTL_SECONDS.verify_email / 3600),
+      after(() =>
+        sendMail(verifyEmailMail(input.email, token, TOKEN_TTL_SECONDS.verify_email / 3600)),
       );
     } else if (existing.status === "active" || existing.status === "pending_review") {
-      await sendMail(alreadyRegisteredMail(input.email));
+      after(() => sendMail(alreadyRegisteredMail(input.email)));
     }
     // Blocked and rejected accounts get no mail (assumption, see docs/PLAN.md 2А).
     return "ok";
@@ -159,7 +164,9 @@ export async function registerCustomer(
         .returning({ id: tables.users.id });
       return createEmailToken("verify_email", "user", user.id, tx);
     });
-    await sendMail(verifyEmailMail(input.email, token, TOKEN_TTL_SECONDS.verify_email / 3600));
+    after(() =>
+      sendMail(verifyEmailMail(input.email, token, TOKEN_TTL_SECONDS.verify_email / 3600)),
+    );
   } catch (error) {
     // Lost a race with a parallel registration of the same email: same outcome.
     if (!isUniqueViolation(error)) throw error;

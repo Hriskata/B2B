@@ -14,7 +14,8 @@ export function LanguageSwitch({ lang }: { lang: Lang }) {
       href={switchHref(lang, pathname)}
       lang={target}
       hrefLang={target}
-      aria-label={t.ariaLabel}
+      // The visible code (BG/EN) is part of the name, for voice control.
+      aria-label={`${t.ariaLabel} (${t.short})`}
       className="t-small"
     >
       {/* The language code on a phone, where the header has little room. */}

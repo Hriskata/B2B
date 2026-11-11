@@ -250,6 +250,7 @@ export const en: Dict = {
     cookies_rows: [
       ["b2b_session", "Keeps a customer logged in.", "up to 7 days", "after login", "not required (necessary)"],
       ["b2b_admin_session", "Keeps an administrator logged in. Never set for visitors or customers.", "up to 8 hours", "after logging in to administration", "not required (necessary)"],
+      ["b2b_review_notice", "Message about the last decision on a registration. Administrators only.", "30 seconds", "after a decision on a registration in administration", "not required (necessary)"],
       ["b2b_consent", "Remembers your cookie choice.", "180 days", "after choosing in the banner", "not required (stores your choice)"],
       ["_ga, _ga_*", "Visit statistics (Google Analytics).", "set by Google", "only if you accept statistics cookies", "required"],
     ],

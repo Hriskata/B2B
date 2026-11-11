@@ -45,4 +45,7 @@ export const LIMITS = {
   registerPerEmail: { limit: 3, windowSeconds: 60 * 60 },
   resetRequestPerIp: { limit: 10, windowSeconds: 60 * 60 },
   resetRequestPerEmail: { limit: 3, windowSeconds: 60 * 60 },
+  // Submitting a new password from a reset link (proposal): each submit looks
+  // the link up in the database and hashes a password.
+  resetSubmitPerIp: { limit: 20, windowSeconds: 60 * 60 },
 } as const;

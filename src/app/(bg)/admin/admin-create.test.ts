@@ -109,6 +109,46 @@ describeDb("adding an admin from the portal", () => {
     expect(role.fieldErrors?.role).toBeTruthy();
     expect(await adminsInDb()).toHaveLength(1);
   });
+
+  it("a taken email is refused before the 2FA code is spent", async () => {
+    const { secret } = await loginAs("editor@firma.bg", PASSWORD, { role: "editor" });
+    const code = await freshCode(secret);
+
+    const dup = await createAdminAction(
+      initialFormState,
+      fd({ email: "editor@firma.bg", role: "viewer", password: PASSWORD, code }),
+    );
+    expect(dup.fieldErrors?.email).toBeTruthy();
+
+    // The same code still works for the corrected form.
+    const ok = await createAdminAction(
+      initialFormState,
+      fd({ email: "new@firma.bg", role: "viewer", password: PASSWORD, code }),
+    );
+    expect(ok.status).toBe("success");
+  });
+
+  it("wrong codes here are limited on their own and do not lock the admin's login", async () => {
+    const made = await loginAs("editor@firma.bg", PASSWORD, { role: "editor" });
+    const attempt = () =>
+      createAdminAction(
+        initialFormState,
+        fd({ email: "x@firma.bg", role: "viewer", password: PASSWORD, code: "000000" }),
+      );
+    for (let i = 0; i < 5; i++) expect((await attempt()).message).toMatch(/Невалидна парола или код/);
+    expect((await attempt()).message).toMatch(/Твърде много опити/);
+
+    // The login with a valid code still works.
+    vi.useRealTimers();
+    cookieJar.clear();
+    await redirectedTo(() =>
+      adminLoginAction(initialFormState, fd({ email: "editor@firma.bg", password: PASSWORD })),
+    );
+    await redirectedTo(async () =>
+      adminVerifyAction(initialFormState, fd({ code: await freshCode(made.secret) })),
+    );
+    expect(await getCurrentAdmin("full")).not.toBeNull();
+  });
 });
 
 describeDb("forced change of the default password", () => {

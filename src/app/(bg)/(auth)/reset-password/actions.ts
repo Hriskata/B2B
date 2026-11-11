@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { emailForCustomerResetToken, resetCustomerPassword } from "@/lib/auth/customer";
 import { failure, MESSAGES, type FormState } from "@/lib/form-state";
 import { validatePassword } from "@/lib/password";
+import { getClientIp } from "@/lib/client-ip";
+import { hit, LIMITS } from "@/lib/rate-limit";
 import { field } from "@/lib/validation";
 
 export async function resetPasswordAction(
@@ -13,6 +15,10 @@ export async function resetPasswordAction(
   const token = field(formData, "token");
   const password = field(formData, "password");
   const confirm = field(formData, "confirm");
+
+  if (!(await hit(`reset-submit:user:ip:${await getClientIp()}`, LIMITS.resetSubmitPerIp))) {
+    return failure(prev, MESSAGES.rateLimited);
+  }
 
   // Check the password first: a weak one must not use up the one-time link.
   const email = await emailForCustomerResetToken(token);

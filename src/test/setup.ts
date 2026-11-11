@@ -14,6 +14,10 @@ vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 vi.mock("next/server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/server")>()),
   connection: async () => {},
+  // Runs the task at once (in a request it runs after the response).
+  after: (task: Promise<unknown> | (() => unknown)) => {
+    void (typeof task === "function" ? task() : task);
+  },
 }));
 vi.mock("next/cache", () => ({
   cacheLife: () => {},

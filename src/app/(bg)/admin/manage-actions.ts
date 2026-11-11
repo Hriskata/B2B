@@ -1,14 +1,16 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createAdminAccount, DEFAULT_ADMIN_PASSWORD, resetAdminTwoFactor } from "@/lib/admin/admins";
 import { setCompanyBlocked, setUserBlocked } from "@/lib/admin/accounts";
-import { reviewRegistration } from "@/lib/admin/registrations";
+import { REVIEW_NOTICE_COOKIE, reviewRegistration } from "@/lib/admin/registrations";
 import { createProduct, updateProduct } from "@/lib/admin/products";
 import { authorize } from "@/lib/auth/current";
 import { isValidSlug } from "@/lib/catalog";
+import { getEnv } from "@/lib/env";
 import { failure, MESSAGES, success, type FormState } from "@/lib/form-state";
 import { parsePriceToCents } from "@/lib/money";
 import { SERIES_KEYS } from "@/lib/series";
@@ -197,7 +199,18 @@ export async function reviewRegistrationAction(formData: FormData): Promise<void
     decision,
   );
   // Another admin may have decided first: say so, the earlier decision stands.
-  redirect(`/admin/registrations?notice=${result === "ok" ? decision : "already-decided"}`);
+  // The notice goes in a short-lived cookie, not in the address, so a link
+  // cannot show an admin a decision they did not make.
+  const notice =
+    result === "not_found" ? "already-decided" : result === "mail_failed" ? `${decision}-mail-failed` : decision;
+  (await cookies()).set(REVIEW_NOTICE_COOKIE, notice, {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: getEnv().APP_URL.startsWith("https://"),
+    path: "/admin/registrations",
+    maxAge: 30,
+  });
+  redirect("/admin/registrations");
 }
 
 // Adds an admin with the default password; the new admin must change it at

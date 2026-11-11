@@ -5,11 +5,11 @@ import { forgotPasswordAction } from "@/app/(bg)/(auth)/forgot-password/actions"
 import { loginAction } from "@/app/(bg)/(auth)/login/actions";
 import { registerAction } from "@/app/(bg)/(auth)/register/actions";
 import { verifyEmailAction } from "@/app/(bg)/(auth)/verify-email/actions";
-import { listPendingRegistrations } from "@/lib/admin/registrations";
+import { listPendingRegistrations, REVIEW_NOTICE_COOKIE } from "@/lib/admin/registrations";
 import { getCurrentAdmin, getCurrentUser } from "@/lib/auth/current";
 import { initialFormState } from "@/lib/form-state";
 import { codeFor, createAdmin, createUser, fd, PASSWORD } from "@/test/factories";
-import { sentMails, tokenFromMail } from "@/test/mail-capture";
+import { mailControl, sentMails, tokenFromMail } from "@/test/mail-capture";
 import { cookieJar, redirectedTo } from "@/test/next-mocks";
 import { adminLoginAction, adminVerifyAction } from "./actions";
 import { reviewRegistrationAction, setUserBlockedAction } from "./manage-actions";
@@ -31,9 +31,14 @@ const pendingUser = () =>
 
 const userRow = async () => (await getDb().select().from(tables.users))[0];
 const auditRows = () => getDb().select().from(tables.auditLog);
-// Returns where the action sends the admin (null when it does not redirect).
-const review = (userId: string, decision: string) =>
-  redirectedTo(() => reviewRegistrationAction(fd({ userId, decision })));
+// The notice the admin gets after the decision (from the short-lived cookie),
+// or where the action sent them instead (e.g. /admin/login), or null.
+async function review(userId: string, decision: string) {
+  cookieJar.delete(REVIEW_NOTICE_COOKIE);
+  const to = await redirectedTo(() => reviewRegistrationAction(fd({ userId, decision })));
+  if (to !== "/admin/registrations") return to;
+  return cookieJar.get(REVIEW_NOTICE_COOKIE)?.value ?? null;
+}
 
 async function customerLogin() {
   cookieJar.clear();
@@ -162,7 +167,7 @@ describeDb("manual review: decisions", () => {
     await loginAdminAs("editor@firma.bg", "editor");
     sentMails.length = 0;
 
-    expect(await review(user.id, "approve")).toBe("/admin/registrations?notice=approve");
+    expect(await review(user.id, "approve")).toBe("approve");
 
     const row = await userRow();
     expect(row.status).toBe("active");
@@ -184,7 +189,7 @@ describeDb("manual review: decisions", () => {
     await loginAdminAs("editor@firma.bg", "editor");
     sentMails.length = 0;
 
-    expect(await review(user.id, "reject")).toBe("/admin/registrations?notice=reject");
+    expect(await review(user.id, "reject")).toBe("reject");
 
     const row = await userRow();
     expect(row.status).toBe("rejected");
@@ -208,7 +213,7 @@ describeDb("manual review: decisions", () => {
     sentMails.length = 0;
 
     // Already decided: the admin is told the earlier decision stands.
-    expect(await review(user.id, "reject")).toBe("/admin/registrations?notice=already-decided");
+    expect(await review(user.id, "reject")).toBe("already-decided");
     await review(active.id, "reject"); // never waited
     await review("not-a-uuid", "approve");
     expect(await review(user.id, "maybe")).toBeNull();
@@ -220,6 +225,15 @@ describeDb("manual review: decisions", () => {
     expect(activeRow.status).toBe("active");
     expect(sentMails).toHaveLength(0);
     expect(await auditRows()).toHaveLength(1);
+  });
+
+  it("tells the admin when the mail to the customer did not go out (the decision stands)", async () => {
+    const user = await pendingUser();
+    await loginAdminAs("editor@firma.bg", "editor");
+    mailControl.fail = true;
+
+    expect(await review(user.id, "approve")).toBe("approve-mail-failed");
+    expect((await userRow()).status).toBe("active");
   });
 
   it("two decisions at the same time: exactly one wins, one journal entry, one mail", async () => {
