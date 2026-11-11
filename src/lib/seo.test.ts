@@ -51,6 +51,10 @@ describe("formatMoney", () => {
     expect(formatMoney(5, "EUR")).toMatch(/^0,05\s€$/);
     expect(formatMoney(123456, "EUR")).toMatch(/1\s?234,56\s€/);
   });
+
+  it("formats in English style on English pages", () => {
+    expect(formatMoney(1250, "EUR", "en-GB")).toBe("€12.50");
+  });
 });
 
 describe("organizationJsonLd", () => {

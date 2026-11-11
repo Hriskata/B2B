@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { createContext, useContext, useEffect, useState } from "react";
 import { getDict, type Lang } from "@/i18n";
+import { formatMoney } from "@/lib/money";
 
-type PriceMap = Record<string, { formatted: string }>;
+type PriceMap = Record<string, { amountCents: number; currency: string }>;
 type State =
   | { status: "loading" }
   | { status: "guest" }
@@ -63,7 +64,8 @@ export function Price({
   className?: string;
 }) {
   const state = useContext(PricesContext);
-  const t = getDict(lang).price;
+  const dict = getDict(lang);
+  const t = dict.price;
 
   if (state.status === "guest") {
     return (
@@ -85,7 +87,8 @@ export function Price({
         <span className="text-muted">{t.loading}</span>
       ) : price ? (
         <>
-          {t.perUnit} <strong>{price.formatted}</strong>
+          {/* Formatted in the page language. */}
+          {t.perUnit} <strong>{formatMoney(price.amountCents, price.currency, dict.localeTag)}</strong>
         </>
       ) : (
         <span className="text-secondary">{t.negotiable}</span>
