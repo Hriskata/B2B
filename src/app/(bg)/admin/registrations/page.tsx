@@ -14,7 +14,8 @@ const when = new Intl.DateTimeFormat("bg-BG", {
   timeZone: "Europe/Sofia",
 });
 
-// Registrations waiting for manual review (every foreign company for now).
+// Registrations waiting for manual review: every foreign company and every
+// Bulgarian one the register did not confirm as active.
 // "Преглед" sees them; only "преглед + редакция" may decide (checked again by
 // the action on the server).
 // What the register said, for the admin who decides.
@@ -31,6 +32,8 @@ function registryText(r: {
       return `НЕАКТИВНА${code}`;
     case "unknown":
       return `намерена, но статусът не е разпознат${code}; не е потвърдено, че е активна`;
+    case "not_confirmed":
+      return "регистърът не я намери, но това не е потвърдено като „няма такава фирма“; проверете ръчно";
     case "unavailable":
       return "регистърът не отговори; фирмата не е проверена";
     default:

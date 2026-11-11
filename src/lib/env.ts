@@ -26,7 +26,10 @@ const schema = z
   // Company register (CompanyBook, header X-API-Key). Server only. Without it
   // no Bulgarian company can be checked and every registration goes to manual
   // review.
-  COMPANYBOOK_API_KEY: z.string().optional(),
+  COMPANYBOOK_API_KEY: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() || undefined),
   // How many reverse proxies append to X-Forwarded-For in front of the app.
   TRUSTED_PROXY_COUNT: z.coerce.number().int().min(0).default(1),
   // Local testing only: admins log in with the password alone. Refused unless

@@ -852,7 +852,7 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
-          "default": false
+          "default": true
         },
         "approved_at": {
           "name": "approved_at",

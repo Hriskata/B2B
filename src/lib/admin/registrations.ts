@@ -114,6 +114,9 @@ export async function reviewRegistration(
         company: company.name,
         country: company.country,
         companyNumber: company.companyNumber,
+        // What the register said when the admin decided.
+        registryState: company.registryState,
+        registryStatus: company.registryStatus,
       },
     });
     return user;

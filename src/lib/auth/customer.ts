@@ -59,6 +59,12 @@ function registryFields(check: CompanyCheck) {
   };
 }
 
+// A register that did not answer (or an unconfirmed "not found") must not
+// wipe an earlier real answer that admins may still be looking at.
+function isRealAnswer(check: CompanyCheck): boolean {
+  return check.kind !== "unavailable" && check.kind !== "not_confirmed";
+}
+
 // Order as in CLAUDE.md: the form, then the company check, and only then the
 // verification email. A company the register does not know is refused with a
 // clear message; every other answer than "active" (inactive, unknown status,
@@ -92,6 +98,12 @@ export async function registerCustomer(
 
   if (existing) {
     if (existing.status === "unverified") {
+      // A fresh answer can only add the need for a review, never remove it:
+      // a company struck off since the first registration is not approved
+      // by an old "active".
+      if (needsReview && !existing.needsReview) {
+        await db.update(tables.users).set({ needsReview: true }).where(eq(tables.users.id, existing.id));
+      }
       const token = await createEmailToken("verify_email", "user", existing.id);
       await sendMail(
         verifyEmailMail(input.email, token, TOKEN_TTL_SECONDS.verify_email / 3600),
@@ -127,7 +139,7 @@ export async function registerCustomer(
           )
       )[0];
       // The latest register answer, also for a company that already exists.
-      if (check) {
+      if (check && (isRealAnswer(check) || company.registryState === null)) {
         await tx
           .update(tables.companies)
           .set(registryFields(check))

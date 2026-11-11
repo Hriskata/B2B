@@ -3,17 +3,22 @@
 // the meaning of the CompanyBook codes is not documented clearly enough to
 // guess. Until then every found company is "unknown" and goes to manual
 // review, so nobody is approved or refused because of a guess.
-const STATUS_MEANING: Record<string, Record<string, "active" | "inactive">> = {
-  companybook: {},
+const STATUS_MEANING = new Map<string, ReadonlyMap<string, "active" | "inactive">>([
+  ["companybook", new Map()],
   // The fake register of the tests (src/test/company-register.ts).
-  test: { ACTIVE: "active", INACTIVE: "inactive" },
-};
+  [
+    "test",
+    new Map([
+      ["ACTIVE", "active"],
+      ["INACTIVE", "inactive"],
+    ]),
+  ],
+]);
 
 export function classifyStatus(
   provider: string,
   status: string | null,
 ): "active" | "inactive" | "unknown" {
   if (status === null) return "unknown";
-  const table = STATUS_MEANING[provider];
-  return (table && Object.hasOwn(table, status) ? table[status] : undefined) ?? "unknown";
+  return STATUS_MEANING.get(provider)?.get(status) ?? "unknown";
 }

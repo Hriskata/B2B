@@ -80,7 +80,9 @@ export const users = pgTable(
     emailVerifiedAt: timestamptz("email_verified_at"),
     // An admin must approve this profile before it becomes active (foreign
     // company, or the register check did not confirm an active company).
-    needsReview: boolean("needs_review").notNull().default(false),
+    // Safe default: a row written without it (old code, a future import)
+    // waits for an admin instead of being approved.
+    needsReview: boolean("needs_review").notNull().default(true),
     // Set by the manual review; unblocking returns to the reviewed state.
     approvedAt: timestamptz("approved_at"),
     rejectedAt: timestamptz("rejected_at"),

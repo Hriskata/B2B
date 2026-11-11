@@ -40,7 +40,7 @@ describeDb("checkCompany", () => {
   it("tells inactive, unknown status and not found apart", async () => {
     companyRegister.answers.set("111111111", { found: true, status: "INACTIVE", name: "А" });
     companyRegister.answers.set("222222222", { found: true, status: "Z", name: "Б" });
-    companyRegister.answers.set("333333333", { found: false });
+    companyRegister.answers.set("333333333", { found: false, certain: true });
 
     expect((await checkCompany("111111111", fakeVerifier, FAST)).kind).toBe("inactive");
     expect((await checkCompany("222222222", fakeVerifier, FAST)).kind).toBe("unknown");
@@ -48,7 +48,7 @@ describeDb("checkCompany", () => {
   });
 
   it("asks again after the cache time (a day for a company, an hour for not found)", async () => {
-    companyRegister.answers.set("333333333", { found: false });
+    companyRegister.answers.set("333333333", { found: false, certain: true });
     await checkCompany("123456789", fakeVerifier, FAST);
     await checkCompany("333333333", fakeVerifier, FAST);
     await getDb()
@@ -104,7 +104,7 @@ describeDb("checkCompany", () => {
 
   it("does not reuse an answer of another register", async () => {
     await checkCompany("123456789", fakeVerifier, FAST);
-    const other: CompanyVerifier = { provider: "other", lookup: async () => ({ found: false }) };
+    const other: CompanyVerifier = { provider: "other", lookup: async () => ({ found: false, certain: true }) };
     expect((await checkCompany("123456789", other, FAST)).kind).toBe("not_found");
   });
 });
@@ -129,11 +129,16 @@ describe("CompanyBook verifier", () => {
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://register.test/api/companies/123456789");
     expect((init.headers as Record<string, string>)["X-API-Key"]).toBe("secret-key");
+    // A redirect must not carry the key to another host.
+    expect(init.redirect).toBe("error");
   });
 
-  it("reads 404 as no such company and a number status as text", async () => {
+  it("reads 404 as an UNCONFIRMED not found (manual review) and a number status as text", async () => {
     stubFetch(404, {});
-    expect(await createCompanyBookVerifier("k").lookup("1", signal)).toEqual({ found: false });
+    expect(await createCompanyBookVerifier("k").lookup("1", signal)).toEqual({
+      found: false,
+      certain: false,
+    });
     stubFetch(200, { name: null, status: 1 });
     expect(await createCompanyBookVerifier("k").lookup("1", signal)).toEqual({
       found: true,
@@ -152,5 +157,52 @@ describe("CompanyBook verifier", () => {
       .lookup("1", signal)
       .catch((e: Error) => e);
     expect(String(error)).not.toContain("secret-key");
+  });
+
+  it("does not take an answer for another number, or an empty answer, as found", async () => {
+    stubFetch(200, { uic: "999999999", name: "Друга", status: "N" });
+    await expect(createCompanyBookVerifier("k").lookup("123456789", signal)).rejects.toThrow();
+    stubFetch(200, {});
+    await expect(createCompanyBookVerifier("k").lookup("123456789", signal)).rejects.toThrow();
+    stubFetch(200, { uic: "BG123456789", name: "Тест", status: null });
+    expect((await createCompanyBookVerifier("k").lookup("123456789", signal)).found).toBe(true);
+  });
+});
+
+describeDb("checkCompany: errors and cache", () => {
+  it("an unconfirmed not found is reported as such and not cached", async () => {
+    companyRegister.answers.set("123456789", { found: false, certain: false });
+    expect((await checkCompany("123456789", fakeVerifier, FAST)).kind).toBe("not_confirmed");
+    await checkCompany("123456789", fakeVerifier, FAST);
+    expect(companyRegister.calls).toHaveLength(2);
+  });
+
+  it.each([401, 403, 429])("does not retry an HTTP %i (it will not get better in seconds)", async (status) => {
+    const { RegisterHttpError } = await import("./types");
+    let calls = 0;
+    const refusing: CompanyVerifier = {
+      provider: "test",
+      async lookup() {
+        calls++;
+        throw new RegisterHttpError(status);
+      },
+    };
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    expect(await checkCompany("123456789", refusing, FAST)).toEqual({ kind: "unavailable" });
+    expect(calls).toBe(1);
+    expect(log.mock.calls.flat().join(" ")).toContain(`HTTP ${status}`);
+  });
+
+  it("uses a good answer even when it cannot be cached", async () => {
+    const { getDb: db } = await import("@/db");
+    const insert = vi.spyOn(db(), "insert").mockImplementation(() => {
+      throw new Error("database down");
+    });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    expect((await checkCompany("123456789", fakeVerifier, FAST)).kind).toBe("active");
+    expect(companyRegister.calls).toHaveLength(1);
+    insert.mockRestore();
   });
 });

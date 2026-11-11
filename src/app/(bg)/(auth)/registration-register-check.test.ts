@@ -49,7 +49,7 @@ describeDb("registration and the company register", () => {
   });
 
   it("a company the register does not know gets a clear message, and nothing is created", async () => {
-    companyRegister.answers.set("123456789", { found: false });
+    companyRegister.answers.set("123456789", { found: false, certain: true });
 
     const state = await register();
 
@@ -62,7 +62,7 @@ describeDb("registration and the company register", () => {
 
   it("the not-found answer is the same for a registered and a new email", async () => {
     await createUser({ email: "client@firma.bg", companyNumber: "987654321" });
-    companyRegister.answers.set("111111111", { found: false });
+    companyRegister.answers.set("111111111", { found: false, certain: true });
 
     const known = await register({ companyNumber: "111111111" });
     const unknown = await register({ email: "new@firma.bg", companyNumber: "111111111" });
@@ -128,5 +128,40 @@ describeDb("registration and the company register", () => {
     await setUserBlocked({ ...actor, id: admin.id }, user.id, false);
 
     expect((await getDb().select().from(tables.users))[0].status).toBe("pending_review");
+  });
+
+  it("an unconfirmed not found (e.g. a 404 of unknown meaning) goes to review, not to a refusal", async () => {
+    companyRegister.answers.set("123456789", { found: false, certain: false });
+
+    const { to, user, company } = await registerAndConfirm();
+
+    expect(to).toBe("/pending-approval");
+    expect(user.status).toBe("pending_review");
+    expect(company.registryState).toBe("not_confirmed");
+  });
+
+  it("registering again while unverified adds a review when the company is no longer active", async () => {
+    await register();
+    companyRegister.answers.set("123456789", { found: true, status: "INACTIVE", name: "Тест ЕООД" });
+    await getDb().delete(tables.companyCheckCache);
+    await register();
+
+    const token = tokenFromMail(sentMails[sentMails.length - 1]);
+    const to = await redirectedTo(() => verifyEmailAction(initialFormState, fd({ token })));
+    expect(to).toBe("/pending-approval");
+    expect((await getDb().select().from(tables.users))[0]).toMatchObject({ needsReview: true, status: "pending_review" });
+  });
+
+  it("a register that does not answer does not wipe an earlier real answer on the company", async () => {
+    await register();
+    companyRegister.defaultAnswer = "fail";
+    await getDb().delete(tables.companyCheckCache);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await register({ email: "second@firma.bg" });
+
+    const [company] = await getDb().select().from(tables.companies);
+    expect(company).toMatchObject({ registryState: "active", registryStatus: "ACTIVE" });
+    const second = (await getDb().select().from(tables.users)).find((u) => u.email === "second@firma.bg")!;
+    expect(second.needsReview).toBe(true);
   });
 });
