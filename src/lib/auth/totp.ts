@@ -99,11 +99,16 @@ export async function completeTotpSetup(adminId: string, code: string): Promise<
 export type SecondFactorResult = "ok" | "invalid" | "rate_limited";
 
 // Accepts a 6-digit authenticator code or a one-time recovery code.
+// limitKey: whose failures count. The login uses its own key; a re-check
+// before a sensitive change passes its own key, so mistakes there do not
+// lock the admin out of logging in (and a success there does not reset the
+// login limit).
 export async function verifySecondFactor(
   adminId: string,
   input: string,
+  limitKey: string = mfaKey(adminId),
 ): Promise<SecondFactorResult> {
-  const key = mfaKey(adminId);
+  const key = limitKey;
   if (await isLimited(key, LIMITS.mfaFailuresPerAdmin.limit)) return "rate_limited";
 
   const admin = await getAdmin(adminId);

@@ -50,7 +50,7 @@ export async function reauthenticateAdmin(
   const passwordOk = !!me && (await verifyPassword(me.passwordHash, password));
   const codeOk =
     passwordOk &&
-    (getEnv().ADMIN_2FA_DISABLED || (await verifySecondFactor(adminId, code)) === "ok");
+    (getEnv().ADMIN_2FA_DISABLED || (await verifySecondFactor(adminId, code, `${key}:2fa`)) === "ok");
   if (!passwordOk || !codeOk) {
     await hit(key, LIMITS.mfaFailuresPerAdmin);
     return "invalid_credentials";
@@ -117,6 +117,10 @@ export async function createAdminAccount(
   password: string,
   code: string,
 ): Promise<CreateAdminResult> {
+  // A taken email is told before the re-check, so the code is not spent on a
+  // form that cannot succeed. The unique email in the insert stays the guard.
+  const taken = await getDb().select({ id: tables.admins.id }).from(tables.admins).where(eq(tables.admins.email, email));
+  if (taken.length > 0) return { ok: false, error: "exists" };
   const reauth = await reauthenticateAdmin(actor.id, password, code);
   if (reauth !== "ok") return { ok: false, error: reauth };
   const passwordHash = await hashPassword(DEFAULT_ADMIN_PASSWORD);
