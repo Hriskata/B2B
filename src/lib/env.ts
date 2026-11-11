@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
+import { isLocalAppUrl } from "./local-url";
 
-const LOCAL_URL = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/;
 
 const schema = z
   .object({
@@ -39,7 +39,7 @@ const schema = z
     .default("false")
     .transform((v) => v === "true"),
   })
-  .refine((env) => !env.ADMIN_2FA_DISABLED || LOCAL_URL.test(env.APP_URL), {
+  .refine((env) => !env.ADMIN_2FA_DISABLED || isLocalAppUrl(env.APP_URL), {
     path: ["ADMIN_2FA_DISABLED"],
     message: "can only be enabled when APP_URL is http://localhost or http://127.0.0.1",
   });

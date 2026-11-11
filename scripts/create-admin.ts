@@ -3,12 +3,17 @@
 //
 //   npm run admin:create -- --email someone@example.com --role editor
 //
+// --test marks a test account for automated checks: its journal entries go to
+// the "От разработка" part of the journal. Only allowed when APP_URL is local
+// (like the seed), so a real database never gets one.
+//
 // The password is typed in the terminal (hidden) and never goes through
 // command-line arguments or logs. 2FA is set up by the admin at first login.
 import { createInterface } from "node:readline";
 import { hash } from "@node-rs/argon2";
 import { createDb } from "../src/db/create";
 import { admins } from "../src/db/schema";
+import { isLocalAppUrl } from "../src/lib/local-url";
 import { validatePassword } from "../src/lib/password-policy";
 
 function arg(name: string): string | undefined {
@@ -61,7 +66,12 @@ async function main() {
   const email = arg("email")?.trim().toLowerCase();
   const role = arg("role");
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || (role !== "viewer" && role !== "editor")) {
-    console.error("Usage: npm run admin:create -- --email <email> --role <viewer|editor>");
+    console.error("Usage: npm run admin:create -- --email <email> --role <viewer|editor> [--test]");
+    process.exit(1);
+  }
+  const isTest = process.argv.includes("--test");
+  if (isTest && !isLocalAppUrl(process.env.APP_URL)) {
+    console.error("Refusing --test: APP_URL is not http://localhost or http://127.0.0.1.");
     process.exit(1);
   }
   const url = process.env.DATABASE_URL;
@@ -86,8 +96,8 @@ async function main() {
 
   const { db, client } = createDb(url, { max: 1 });
   try {
-    await db.insert(admins).values({ email, role, passwordHash: await hash(password) });
-    console.log(`Admin ${email} (${role}) created. 2FA is set up at first login at /admin/login.`);
+    await db.insert(admins).values({ email, role, isTest, passwordHash: await hash(password) });
+    console.log(`${isTest ? "Test admin" : "Admin"} ${email} (${role}) created. 2FA is set up at first login at /admin/login.`);
   } catch (error) {
     const code = (error as { code?: string; cause?: { code?: string } }).code ??
       (error as { cause?: { code?: string } }).cause?.code;

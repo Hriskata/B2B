@@ -11,9 +11,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { inArray, like } from "drizzle-orm";
 import { createDb } from "../src/db/create";
 import { products } from "../src/db/schema";
+import { isLocalAppUrl } from "../src/lib/local-url";
 import { parseProductsFile, renderTodoData } from "../src/lib/product-import";
-
-const LOCAL_URL = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/;
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(name);
@@ -38,7 +37,7 @@ async function main() {
   const { db, client } = createDb(url, { max: 1 });
   try {
     if (has("--remove-samples")) {
-      if (!LOCAL_URL.test(process.env.APP_URL ?? "")) {
+      if (!isLocalAppUrl(process.env.APP_URL)) {
         console.error("Refusing to remove samples: APP_URL is not http://localhost or http://127.0.0.1.");
         process.exit(1);
       }
