@@ -13,6 +13,9 @@ const itemsSchema = z
     z.object({
       slug: z.string().refine(isValidSlug),
       quantity: z.number().int().min(1).max(INQUIRY_LIMITS.quantity),
+      // Checked against the catalog in submitInquiry (product-options.ts).
+      polish: z.string().max(40).nullish(),
+      fibers: z.number().int().positive().max(100_000).nullish(),
     }),
   )
   .min(1)
@@ -89,6 +92,20 @@ export async function submitInquiryAction(prev: FormState, formData: FormData): 
     items: items.data,
   });
   if (result === "rate_limited") return failure(prev, MESSAGES.rateLimited, { values });
+  if (result === "quantity_too_large") {
+    return failure(prev, MESSAGES.invalidInput, {
+      fieldErrors: {
+        items: `Един продукт с едни и същи настройки може да е до ${INQUIRY_LIMITS.quantity.toLocaleString("bg-BG")} бройки общо.`,
+      },
+      values,
+    });
+  }
+  if (result === "invalid_options") {
+    return failure(prev, MESSAGES.invalidInput, {
+      fieldErrors: { items: "Изберете полиране и брой влакна за всеки продукт от предложените варианти." },
+      values,
+    });
+  }
   if (result === "product_unavailable") {
     return failure(prev, "Някой от продуктите вече не е наличен. Махнете го от списъка и опитайте отново.", {
       values,

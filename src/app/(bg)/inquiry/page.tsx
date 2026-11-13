@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth/current";
 import { listPublicProducts } from "@/lib/catalog";
+import { productOptions } from "@/lib/product-options";
 import { InquiryForm } from "./inquiry-form";
 
 export const metadata: Metadata = {
@@ -39,13 +40,17 @@ async function Content({ searchParams }: { searchParams: PageProps<"/inquiry">["
       </>
     );
   }
-  const products = (await listPublicProducts()).map((p) => ({ slug: p.slug, name: p.name }));
+  const products = (await listPublicProducts()).map((p) => ({
+    slug: p.slug,
+    name: p.name,
+    options: productOptions(p),
+  }));
   const { product } = await searchParams;
   return (
     <>
       <h1>Запитване</h1>
       <p className="mt-3 mb-8 text-secondary">
-        Изберете продуктите и бройките. Цената се договаря след запитването.
+        Изберете продуктите, настройките им и бройките. Цената се договаря след запитването.
       </p>
       <InquiryForm
         products={products}

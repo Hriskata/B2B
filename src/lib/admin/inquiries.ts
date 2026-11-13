@@ -38,6 +38,8 @@ export async function listInquiries(limit = 200) {
       inquiryId: tables.inquiryItems.inquiryId,
       productName: tables.inquiryItems.productName,
       quantity: tables.inquiryItems.quantity,
+      polish: tables.inquiryItems.polish,
+      fibers: tables.inquiryItems.fibers,
     })
     .from(tables.inquiryItems)
     .where(
@@ -46,7 +48,7 @@ export async function listInquiries(limit = 200) {
         rows.map((r) => r.id),
       ),
     )
-    .orderBy(tables.inquiryItems.productName);
+    .orderBy(tables.inquiryItems.productName, tables.inquiryItems.polish, tables.inquiryItems.fibers);
   const byInquiry = Map.groupBy(items, (i) => i.inquiryId);
   return rows.map((r) => ({ ...r, items: byInquiry.get(r.id) ?? [] }));
 }
@@ -124,7 +126,8 @@ export async function inquiryStats(period: StatsPeriod): Promise<{
   const counts = db
     .select({
       productId: tables.inquiryItems.productId,
-      inquiries: sql<number>`count(*)::int`.as("inquiries"),
+      // Distinct: one inquiry may ask for a model in several settings.
+      inquiries: sql<number>`count(distinct ${tables.inquiryItems.inquiryId})::int`.as("inquiries"),
       units: sql<string>`sum(${tables.inquiryItems.quantity})::bigint`.as("units"),
     })
     .from(tables.inquiryItems)

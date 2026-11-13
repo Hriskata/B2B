@@ -5,6 +5,7 @@ import { getDb, tables } from "@/db";
 import { checkCompany } from "./company-check";
 import { isRealAnswer, registryFields } from "./company-check/registry-fields";
 import { sendMail } from "./mail/send";
+import { productOptions, resolveOptions } from "./product-options";
 import { inquiryAdminMail } from "./mail/templates";
 import { hit, LIMITS } from "./rate-limit";
 
@@ -27,16 +28,26 @@ export type InquiryInput = {
   message: string | null;
   // Made once by the form; the same value again creates nothing new.
   clientKey: string;
-  items: { slug: string; quantity: number }[];
+  // polish and fibers: the chosen settings (product-options.ts); missing for
+  // a model without that choice.
+  items: { slug: string; quantity: number; polish?: string | null; fibers?: number | null }[];
 };
 
-export type SubmitResult = "ok" | "rate_limited" | "product_unavailable";
+export type SubmitResult = "ok" | "rate_limited" | "product_unavailable" | "invalid_options" | "quantity_too_large";
 
-// The same product twice in one inquiry becomes one line with the sum.
-export function mergeItems(items: InquiryInput["items"]): InquiryInput["items"] {
-  const bySlug = new Map<string, number>();
-  for (const item of items) bySlug.set(item.slug, (bySlug.get(item.slug) ?? 0) + item.quantity);
-  return [...bySlug].map(([slug, quantity]) => ({ slug, quantity }));
+type Line = { slug: string; quantity: number; polish: string | null; fibers: number | null };
+
+// The same product in the same settings twice becomes one line with the sum;
+// other settings stay separate lines.
+export function mergeItems(items: Line[]): Line[] {
+  const byKey = new Map<string, Line>();
+  for (const item of items) {
+    const key = JSON.stringify([item.slug, item.polish, item.fibers]);
+    const seen = byKey.get(key);
+    if (seen) seen.quantity += item.quantity;
+    else byKey.set(key, { ...item });
+  }
+  return [...byKey.values()];
 }
 
 export async function submitInquiry(
@@ -53,23 +64,33 @@ export async function submitInquiry(
     .where(and(eq(tables.inquiries.userId, user.id), eq(tables.inquiries.clientKey, input.clientKey)));
   if (existing.length > 0) return "ok";
 
-  const items = mergeItems(input.items);
+  const slugs = [...new Set(input.items.map((i) => i.slug))];
   const products = await db
-    .select({ id: tables.products.id, slug: tables.products.slug, name: tables.products.name })
+    .select({
+      id: tables.products.id,
+      slug: tables.products.slug,
+      name: tables.products.name,
+      polish: tables.products.polish,
+      fibers: tables.products.fibers,
+      maxFibersVariant: tables.products.maxFibersVariant,
+    })
     .from(tables.products)
-    .where(
-      and(
-        inArray(
-          tables.products.slug,
-          items.map((i) => i.slug),
-        ),
-        eq(tables.products.published, true),
-      ),
-    );
-  if (products.length !== items.length) return "product_unavailable";
+    .where(and(inArray(tables.products.slug, slugs), eq(tables.products.published, true)));
+  if (products.length !== slugs.length) return "product_unavailable";
+  const productBySlug = new Map(products.map((p) => [p.slug, p]));
+
+  // Every chosen setting must be one the catalog offers for that model.
+  const resolved: Line[] = [];
+  for (const item of input.items) {
+    const chosen = resolveOptions(productOptions(productBySlug.get(item.slug)!), item);
+    if (!chosen) return "invalid_options";
+    resolved.push({ slug: item.slug, quantity: item.quantity, ...chosen });
+  }
+  const items = mergeItems(resolved);
+  // Lines joined into one must still keep the limit per line.
+  if (items.some((i) => i.quantity > INQUIRY_LIMITS.quantity)) return "quantity_too_large";
   // Counted only for an inquiry that can be saved.
   if (!(await hit(`inquiry:user:${user.id}`, LIMITS.inquiryPerUser))) return "rate_limited";
-  const productBySlug = new Map(products.map((p) => [p.slug, p]));
 
   const company = (
     await db.select().from(tables.companies).where(eq(tables.companies.id, user.companyId))
@@ -124,6 +145,8 @@ export async function submitInquiry(
           productId: product.id,
           productName: product.name,
           quantity: item.quantity,
+          polish: item.polish,
+          fibers: item.fibers,
         };
       }),
     );
@@ -156,9 +179,15 @@ export async function notifyInquiryRecipients(inquiryId: string): Promise<void> 
   )[0];
   if (!inquiry) return;
   const items = await db
-    .select({ name: tables.inquiryItems.productName, quantity: tables.inquiryItems.quantity })
+    .select({
+      name: tables.inquiryItems.productName,
+      quantity: tables.inquiryItems.quantity,
+      polish: tables.inquiryItems.polish,
+      fibers: tables.inquiryItems.fibers,
+    })
     .from(tables.inquiryItems)
-    .where(eq(tables.inquiryItems.inquiryId, inquiryId));
+    .where(eq(tables.inquiryItems.inquiryId, inquiryId))
+    .orderBy(tables.inquiryItems.productName, tables.inquiryItems.polish, tables.inquiryItems.fibers);
   const recipients = await inquiryRecipients();
   // In parallel; a lost mail is logged without any address (the inquiry is
   // saved and visible in the portal anyway).

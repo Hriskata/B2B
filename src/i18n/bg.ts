@@ -112,8 +112,6 @@ export const bg = {
     sku: "Модел (SKU)",
     series: "Серия",
     mpoPorts: "MPO портове",
-    fibersStandard: "Влакна (стандартна конфигурация)",
-    fibersUpTo: "Варианти до (влакна)",
     fibersPerRu: "Влакна на RU",
     splice: "Сплайс",
     frontDoor: "Предна врата",

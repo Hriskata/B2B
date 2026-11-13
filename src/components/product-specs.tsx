@@ -1,5 +1,6 @@
 import type { PublicProduct } from "@/lib/catalog";
 import { getDict, type Lang } from "@/i18n";
+import { formatFibers } from "@/lib/product-options";
 import { seriesName } from "@/lib/series";
 
 export function specSummary(p: PublicProduct, lang: Lang): string | null {
@@ -7,7 +8,7 @@ export function specSummary(p: PublicProduct, lang: Lang): string | null {
   const nf = new Intl.NumberFormat(getDict(lang).localeTag);
   const parts = [
     p.ports !== null ? `${nf.format(p.ports)} ${t.portsUnit}` : null,
-    p.fibers !== null ? `${nf.format(p.fibers)} ${t.fibersUnit}` : null,
+    p.fibers !== null ? `${formatFibers(p, nf)} ${t.fibersUnit}` : null,
     p.rackUnits !== null ? `${p.rackUnits}RU` : null,
   ].filter(Boolean);
   return parts.length ? parts.join(" · ") : null;
@@ -28,7 +29,8 @@ export function ProductSpecs({
   const nf = new Intl.NumberFormat(dict.localeTag);
   const tiles = [
     [t.ports, p.ports !== null ? nf.format(p.ports) : null],
-    [t.fibers, p.fibers !== null ? nf.format(p.fibers) : null],
+    // One value: the standard configuration up to the largest variant ("24–96").
+    [t.fibers, formatFibers(p, nf)],
     [t.height, p.rackUnits !== null ? `${p.rackUnits}RU` : null],
     [t.connector, p.connector],
   ].filter((x): x is [string, string] => x[1] !== null);
@@ -42,11 +44,7 @@ export function ProductSpecs({
   add(t.connector, p.connector);
   add(t.ports, p.ports !== null ? nf.format(p.ports) : null);
   add(t.mpoPorts, p.mpoPorts !== null ? nf.format(p.mpoPorts) : null);
-  add(t.fibersStandard, p.fibers !== null ? nf.format(p.fibers) : null);
-  add(
-    t.fibersUpTo,
-    p.maxFibersVariant !== null ? nf.format(p.maxFibersVariant) : null,
-  );
+  add(t.fibers, formatFibers(p, nf));
   add(t.height, p.rackUnits !== null ? `${p.rackUnits}RU` : null);
   add(t.fibersPerRu, p.fibersPerRu !== null ? nf.format(p.fibersPerRu) : null);
   add(t.splice, p.splice === null ? null : p.splice ? t.yes : t.no);
