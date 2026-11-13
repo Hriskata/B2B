@@ -111,6 +111,14 @@ describe("productTitle", () => {
     expect(productTitle(p, "en")).toBe("HDS-ODF-001-SC12 – 12 SC ports, 12 fibers, 1U | ODFFiber");
   });
 
+  it("shows the fiber range when the model has larger variants", () => {
+    const ranged = { ...p, fibers: 24, maxFibersVariant: 96 };
+    expect(productTitle(ranged, "bg")).toBe("HDS-ODF-001-SC12 – 12 SC порта, 24–96 влакна, 1U | ODFFiber");
+    expect(productTitle(ranged, "en")).toBe("HDS-ODF-001-SC12 – 12 SC ports, 24–96 fibers, 1U | ODFFiber");
+    // Large numbers stay plain digits.
+    expect(productTitle({ ...p, fibers: 1152, maxFibersVariant: 1152 }, "bg")).toContain("1152 влакна");
+  });
+
   it("falls back to the model name when numbers are missing", () => {
     expect(productTitle({ ...p, fibers: null }, "bg")).toBe("High-Density Splice SC12");
     expect(productTitle({ ...p, sku: null }, "en")).toBe("High-Density Splice SC12");

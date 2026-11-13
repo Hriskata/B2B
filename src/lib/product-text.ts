@@ -1,5 +1,9 @@
 import type { Lang } from "@/i18n";
 import type { PublicProduct } from "./catalog";
+import { formatFibers } from "./product-options";
+
+// Plain digits in titles (no thousands space): "1152", "24–96".
+const TITLE_NUMBERS = new Intl.NumberFormat("en", { useGrouping: false });
 
 // Short factual English text built only from the numbers in the data (the
 // Bulgarian one is made the same way at import).
@@ -23,14 +27,18 @@ export function productDescription(p: PublicProduct, lang: Lang): string {
 }
 
 // Page title of a product: "{SKU} – {ports} {connector} ports, {fibers} fibers,
-// {RU}U | ODFFiber". Falls back to the model name when the numbers are missing.
+// {RU}U | ODFFiber". Fibers are the range up to the largest variant when the
+// catalog has one ("24–96", decided 14.11.2026), as on the product page.
+// Falls back to the model name when the numbers are missing.
 export function productTitle(p: PublicProduct, lang: Lang): string {
   if (!p.sku || p.ports === null || p.fibers === null || p.rackUnits === null || !p.connector) {
     return p.name;
   }
+  // Not null: p.fibers is checked above.
+  const fibers = formatFibers(p, TITLE_NUMBERS) ?? String(p.fibers);
   const nums =
     lang === "bg"
-      ? `${p.ports} ${p.connector} порта, ${p.fibers} влакна, ${p.rackUnits}U`
-      : `${p.ports} ${p.connector} ports, ${p.fibers} fibers, ${p.rackUnits}U`;
+      ? `${p.ports} ${p.connector} порта, ${fibers} влакна, ${p.rackUnits}U`
+      : `${p.ports} ${p.connector} ports, ${fibers} fibers, ${p.rackUnits}U`;
   return `${p.sku} – ${nums} | ODFFiber`;
 }
