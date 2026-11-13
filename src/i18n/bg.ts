@@ -101,7 +101,7 @@ export const bg = {
   product: {
     notFoundTitle: "Продуктът не е намерен",
     back: "← Към каталога",
-    inquiry: "Запитване за този модел",
+    inquiry: "Добави към запитването",
     photoPlaceholder: "Снимка",
   },
   specs: {

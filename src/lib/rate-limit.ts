@@ -50,4 +50,6 @@ export const LIMITS = {
   resetSubmitPerIp: { limit: 20, windowSeconds: 60 * 60 },
   // New invite links for one admin who has not set a password yet.
   inviteResendPerAdmin: { limit: 5, windowSeconds: 60 * 60 },
+  // Inquiries of one customer (proposal): each one mails the owners.
+  inquiryPerUser: { limit: 10, windowSeconds: 60 * 60 },
 } as const;

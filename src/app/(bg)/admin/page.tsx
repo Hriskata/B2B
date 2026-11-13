@@ -43,6 +43,7 @@ async function Content() {
           ["/admin/products", "Продукти и цени"],
           ["/admin/registrations", "Чакащи регистрации"],
           ["/admin/inquiries", "Запитвания"],
+          ["/admin/statistics", "Статистика"],
           ["/admin/customers", "Клиенти и фирми"],
           ["/admin/admins", "Администратори"],
           ["/admin/audit", "Журнал на промените"],

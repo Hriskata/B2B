@@ -141,3 +141,28 @@ export function registrationRejectedMail(to: string): Mail {
     ].join("\n"),
   };
 }
+
+// New inquiry (phase 4), to the owners. DRAFT text. Only product names from
+// our own catalog and the quantities are in the mail: the company name,
+// contact and message are typed by the customer and are read in the portal.
+export function inquiryAdminMail(
+  to: string,
+  items: { name: string; quantity: number }[],
+  companyInactive: boolean,
+): Mail {
+  return {
+    to,
+    subject: companyInactive ? "Ново запитване (неактивна фирма)" : "Ново запитване",
+    text: [
+      "Здравейте,",
+      "",
+      "Получено е ново запитване за:",
+      ...items.map((i) => `- ${i.name}: ${i.quantity} бр.`),
+      "",
+      ...(companyInactive
+        ? ["Фирмата е неактивна в регистъра. Решете в портала дали да поемете запитването.", ""]
+        : []),
+      `Подробности: ${getEnv().APP_URL.replace(/\/$/, "")}/admin/inquiries`,
+    ].join("\n"),
+  };
+}

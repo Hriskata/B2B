@@ -1,7 +1,9 @@
 // Creates an admin account from the terminal (the first admins, or when no
 // admin can log in). From the admin panel, new admins get an invite link.
 //
-//   npm run admin:create -- --email someone@example.com --role editor
+//   npm run admin:create -- --email someone@example.com --role editor [--kind owner]
+//
+// --kind: support (default) or owner; only owners get the inquiry emails.
 //
 // --test marks a test account for automated checks: its journal entries go to
 // the "От разработка" part of the journal. Only allowed when APP_URL is local
@@ -66,7 +68,12 @@ async function main() {
   const email = arg("email")?.trim().toLowerCase();
   const role = arg("role");
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || (role !== "viewer" && role !== "editor")) {
-    console.error("Usage: npm run admin:create -- --email <email> --role <viewer|editor> [--test]");
+    console.error("Usage: npm run admin:create -- --email <email> --role <viewer|editor> [--kind <support|owner>] [--test]");
+    process.exit(1);
+  }
+  const kind = arg("kind") ?? "support";
+  if (kind !== "support" && kind !== "owner") {
+    console.error("--kind must be support or owner.");
     process.exit(1);
   }
   const isTest = process.argv.includes("--test");
@@ -96,8 +103,8 @@ async function main() {
 
   const { db, client } = createDb(url, { max: 1 });
   try {
-    await db.insert(admins).values({ email, role, isTest, passwordHash: await hash(password) });
-    console.log(`${isTest ? "Test admin" : "Admin"} ${email} (${role}) created. 2FA is set up at first login at /admin/login.`);
+    await db.insert(admins).values({ email, role, kind, isTest, passwordHash: await hash(password) });
+    console.log(`${isTest ? "Test admin" : "Admin"} ${email} (${role}, ${kind}) created. 2FA is set up at first login at /admin/login.`);
   } catch (error) {
     const code = (error as { code?: string; cause?: { code?: string } }).code ??
       (error as { cause?: { code?: string } }).cause?.code;

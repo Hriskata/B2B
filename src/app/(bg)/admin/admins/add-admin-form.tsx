@@ -5,7 +5,7 @@ import { Field, FormMessage, SubmitButton } from "@/components/form-parts";
 import { initialFormState } from "@/lib/form-state";
 import { createAdminAction } from "../manage-actions";
 
-// Adds an admin with the default password. The server action checks the
+// Adds an admin who gets an emailed invite link. The server action checks the
 // "manage_admins" permission on its own; this form is only shown to roles
 // that hold it.
 export function AddAdminForm() {
@@ -38,6 +38,30 @@ export function AddAdminForm() {
         {state.fieldErrors?.role && (
           <p role="alert" className="text-sm text-ember-300">
             {state.fieldErrors.role}
+          </p>
+        )}
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="f-kind" className="font-medium">
+          Тип
+        </label>
+        <select
+          id="f-kind"
+          name="kind"
+          defaultValue={state.values?.kind ?? "support"}
+          aria-invalid={state.fieldErrors?.kind ? true : undefined}
+          aria-describedby="f-kind-hint"
+          className="input"
+        >
+          <option value="support">Поддръжка на сайта</option>
+          <option value="owner">Собственик</option>
+        </select>
+        <p id="f-kind-hint" className="text-sm text-secondary">
+          Двата типа имат еднакви права. Само собствениците получават имейл при ново запитване.
+        </p>
+        {state.fieldErrors?.kind && (
+          <p role="alert" className="text-sm text-ember-300">
+            {state.fieldErrors.kind}
           </p>
         )}
       </div>

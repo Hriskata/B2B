@@ -2,6 +2,8 @@
 // admin action and page; the UI only hides buttons as a convenience.
 //
 // Two roles, as decided: "viewer" (view only) and "editor" (view + edit).
+// The admin kind (support / owner, decided 13.11.2026) gives no rights: only
+// owners get the inquiry emails.
 // Who may approve registrations and reset another admin's 2FA is an
 // assumption of the plan (editor only).
 
@@ -13,7 +15,8 @@ export type Permission =
   | "block_accounts" // block/unblock customers and companies
   | "reset_admin_2fa" // reset another admin's 2FA
   | "manage_admins" // add a new admin
-  | "review_registrations"; // approve or reject a registration waiting for review
+  | "review_registrations" // approve or reject a registration waiting for review
+  | "decide_inquiries"; // take or decline an inquiry of an inactive company
 
 const GRANTS: Record<AdminRole, readonly Permission[]> = {
   viewer: ["view"],
@@ -24,6 +27,7 @@ const GRANTS: Record<AdminRole, readonly Permission[]> = {
     "reset_admin_2fa",
     "manage_admins",
     "review_registrations",
+    "decide_inquiries",
   ],
 };
 

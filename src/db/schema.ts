@@ -29,6 +29,10 @@ export const userStatus = pgEnum("user_status", [
 ]);
 export const adminRole = pgEnum("admin_role", ["viewer", "editor"]);
 export const adminStatus = pgEnum("admin_status", ["active", "blocked"]);
+// What the admin is for the business (decided 13.11.2026): "support" keeps the
+// site running, "owner" owns it. Same rights and same view (those come from
+// the role); only owners get the email about a new inquiry.
+export const adminKind = pgEnum("admin_kind", ["support", "owner"]);
 export const subjectType = pgEnum("subject_type", ["user", "admin"]);
 // "full" is a normal session. The two mfa_* stages are short-lived sessions
 // issued after the admin password check and before the second factor.
@@ -99,6 +103,7 @@ export const admins = pgTable("admins", {
   email: text().notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   role: adminRole().notNull(),
+  kind: adminKind().notNull().default("support"),
   status: adminStatus().notNull().default("active"),
   // Set for an admin added from the portal with the default password: every
   // admin page redirects to the password change until it is done.
@@ -246,5 +251,64 @@ export const auditLog = pgTable(
   (t) => [
     index("audit_log_created_at_idx").on(t.createdAt),
     index("audit_log_source_created_at_idx").on(t.source, t.createdAt),
+  ],
+);
+
+// An inquiry from a logged-in customer (phase 4). Rows are kept: the
+// statistics count them. Contact name, phone and message are typed by the
+// customer and shown to admins as plain text only.
+export const inquiries = pgTable(
+  "inquiries",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id),
+    contactName: text("contact_name").notNull(),
+    phone: text().notNull(),
+    message: text(),
+    // Random value made by the form once: a second submit of the same form
+    // (double click, retry) finds it and creates nothing new.
+    clientKey: uuid("client_key").notNull(),
+    // The company was inactive in the register when the inquiry came in (or
+    // at its last real answer). Only admins see it; they decide whether to
+    // take the inquiry (decided 11.11.2026).
+    companyInactive: boolean("company_inactive").notNull().default(false),
+    registryStatus: text("registry_status"),
+    // Decision on an inquiry of an inactive company: "accepted" | "declined".
+    decision: text().$type<"accepted" | "declined">(),
+    decidedByAdminId: uuid("decided_by_admin_id").references(() => admins.id, { onDelete: "set null" }),
+    decidedAt: timestamptz("decided_at"),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    unique("inquiries_user_client_key_unique").on(t.userId, t.clientKey),
+    index("inquiries_created_at_idx").on(t.createdAt),
+    check("inquiries_decision_known", sql`${t.decision} is null or ${t.decision} in ('accepted', 'declined')`),
+  ],
+);
+
+// One product of an inquiry. The product name is copied, so an old inquiry
+// stays readable after the product is renamed.
+export const inquiryItems = pgTable(
+  "inquiry_items",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    inquiryId: uuid("inquiry_id")
+      .notNull()
+      .references(() => inquiries.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id),
+    productName: text("product_name").notNull(),
+    quantity: integer().notNull(),
+  },
+  (t) => [
+    unique("inquiry_items_inquiry_product_unique").on(t.inquiryId, t.productId),
+    index("inquiry_items_product_id_idx").on(t.productId),
+    check("inquiry_items_quantity_positive", sql`${t.quantity} > 0`),
   ],
 );

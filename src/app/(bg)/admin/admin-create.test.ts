@@ -57,7 +57,7 @@ describeDb("adding an admin from the portal", () => {
 
     const state = await createAdminAction(
       initialFormState,
-      fd({ email: "New.Admin@Firma.bg", role: "viewer", password: PASSWORD, code: await freshCode(secret) }),
+      fd({ email: "New.Admin@Firma.bg", role: "viewer", kind: "support", password: PASSWORD, code: await freshCode(secret) }),
     );
 
     expect(state.status).toBe("success");
@@ -79,14 +79,14 @@ describeDb("adding an admin from the portal", () => {
   it("needs the editor's own password and a current 2FA code (an open session is not enough)", async () => {
     const { secret } = await loginAs("editor@firma.bg", PASSWORD, { role: "editor" });
 
-    const none = await createAdminAction(initialFormState, fd({ email: "x@firma.bg", role: "viewer" }));
+    const none = await createAdminAction(initialFormState, fd({ email: "x@firma.bg", role: "viewer", kind: "support" }));
     const wrongPassword = await createAdminAction(
       initialFormState,
-      fd({ email: "x@firma.bg", role: "viewer", password: "Wrong-pass9", code: await freshCode(secret) }),
+      fd({ email: "x@firma.bg", role: "viewer", kind: "support", password: "Wrong-pass9", code: await freshCode(secret) }),
     );
     const wrongCode = await createAdminAction(
       initialFormState,
-      fd({ email: "x@firma.bg", role: "viewer", password: PASSWORD, code: "000000" }),
+      fd({ email: "x@firma.bg", role: "viewer", kind: "support", password: PASSWORD, code: "000000" }),
     );
 
     for (const state of [none, wrongPassword, wrongCode]) {
@@ -100,7 +100,7 @@ describeDb("adding an admin from the portal", () => {
   it("a viewer cannot add an admin (server refuses, nothing is stored)", async () => {
     await loginAs("viewer@firma.bg", PASSWORD, { role: "viewer" });
 
-    const state = await createAdminAction(initialFormState, fd({ email: "x@firma.bg", role: "editor" }));
+    const state = await createAdminAction(initialFormState, fd({ email: "x@firma.bg", role: "editor", kind: "support" }));
 
     expect(state.status).toBe("error");
     expect(await adminsInDb()).toHaveLength(1);
@@ -111,10 +111,10 @@ describeDb("adding an admin from the portal", () => {
 
     const dup = await createAdminAction(
       initialFormState,
-      fd({ email: "EDITOR@firma.bg", role: "viewer", password: PASSWORD, code: await freshCode(secret) }),
+      fd({ email: "EDITOR@firma.bg", role: "viewer", kind: "support", password: PASSWORD, code: await freshCode(secret) }),
     );
-    const bad = await createAdminAction(initialFormState, fd({ email: "not-an-email", role: "viewer" }));
-    const role = await createAdminAction(initialFormState, fd({ email: "a@firma.bg", role: "root" }));
+    const bad = await createAdminAction(initialFormState, fd({ email: "not-an-email", role: "viewer", kind: "support" }));
+    const role = await createAdminAction(initialFormState, fd({ email: "a@firma.bg", role: "root", kind: "support" }));
 
     expect(dup.fieldErrors?.email).toBeTruthy();
     expect(bad.fieldErrors?.email).toBeTruthy();
@@ -128,14 +128,14 @@ describeDb("adding an admin from the portal", () => {
 
     const dup = await createAdminAction(
       initialFormState,
-      fd({ email: "editor@firma.bg", role: "viewer", password: PASSWORD, code }),
+      fd({ email: "editor@firma.bg", role: "viewer", kind: "support", password: PASSWORD, code }),
     );
     expect(dup.fieldErrors?.email).toBeTruthy();
 
     // The same code still works for the corrected form.
     const ok = await createAdminAction(
       initialFormState,
-      fd({ email: "new@firma.bg", role: "viewer", password: PASSWORD, code }),
+      fd({ email: "new@firma.bg", role: "viewer", kind: "support", password: PASSWORD, code }),
     );
     expect(ok.status).toBe("success");
   });
@@ -145,7 +145,7 @@ describeDb("adding an admin from the portal", () => {
     const attempt = () =>
       createAdminAction(
         initialFormState,
-        fd({ email: "x@firma.bg", role: "viewer", password: PASSWORD, code: "000000" }),
+        fd({ email: "x@firma.bg", role: "viewer", kind: "support", password: PASSWORD, code: "000000" }),
       );
     for (let i = 0; i < 5; i++) expect((await attempt()).message).toMatch(/Невалидна парола или код/);
     expect((await attempt()).message).toMatch(/Твърде много опити/);
@@ -229,7 +229,7 @@ describeDb("invite link for a new admin", () => {
     const editor = await loginAs("editor@firma.bg", PASSWORD, { role: "editor" });
     await createAdminAction(
       initialFormState,
-      fd({ email, role: "viewer", password: PASSWORD, code: await freshCode(editor.secret) }),
+      fd({ email, role: "viewer", kind: "support", password: PASSWORD, code: await freshCode(editor.secret) }),
     );
     vi.useRealTimers();
     const mail = sentMails.filter((m) => m.to === email).at(-1)!;
@@ -372,7 +372,7 @@ describeDb("invite link for a new admin", () => {
     mailControl.fail = true;
     const state = await createAdminAction(
       initialFormState,
-      fd({ email: "new@firma.bg", role: "viewer", password: PASSWORD, code: await freshCode(editor.secret) }),
+      fd({ email: "new@firma.bg", role: "viewer", kind: "support", password: PASSWORD, code: await freshCode(editor.secret) }),
     );
     expect(state.message).toMatch(/НЕ беше изпратен/);
   });
