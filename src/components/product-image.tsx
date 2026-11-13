@@ -1,22 +1,10 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
 import Image from "next/image";
+import { productImageName } from "@/lib/product-image-file";
 
-// Product renders live in public/images/products/<sku in lower case>.webp
-// (made by scripts/extract-product-images.py from the owner's catalog).
-// A model without a file keeps the grey placeholder, so the layout is the same.
-const IMAGE_DIR = path.join(process.cwd(), "public", "images", "products");
-const SAFE_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
+// A model without a render keeps the grey placeholder, so the layout is the same.
 function imageSrc(sku: string | null): string | null {
-  if (!sku) return null;
-  const name = sku.toLowerCase();
-  // Only plain names: the SKU comes from the database, but it must never
-  // reach the file system as a path.
-  if (!SAFE_NAME.test(name)) return null;
-  return existsSync(path.join(IMAGE_DIR, `${name}.webp`))
-    ? `/images/products/${name}.webp`
-    : null;
+  const name = productImageName(sku);
+  return name ? `/images/products/${name}` : null;
 }
 
 // Card width by default; the product page passes its own, wider value so the

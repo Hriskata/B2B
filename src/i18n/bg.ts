@@ -5,6 +5,12 @@ export const bg = {
   htmlLang: "bg",
   localeTag: "bg-BG",
   ogLocale: "bg_BG",
+  // Shared-link picture (Open Graph). DRAFT text.
+  og: {
+    productAlt: "Оптичен панел ODFFiber: модел и основни параметри",
+    siteAlt: "ODFFiber: оптични разпределителни панели (ODF) с висока плътност",
+    forBusinesses: "За фирми · Оферта по запитване",
+  },
   switchTo: { label: "English", short: "EN", ariaLabel: "Switch to English" },
   header: {
     products: "Продукти",

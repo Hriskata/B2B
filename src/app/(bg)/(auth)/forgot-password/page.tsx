@@ -5,7 +5,8 @@ import { getCaptchaSiteKey } from "@/lib/captcha";
 import { forgotPasswordAction } from "./actions";
 import { ForgotPasswordForm } from "./forgot-form";
 
-export const metadata: Metadata = { title: "Забравена парола" };
+// Not useful as a search result; links on it may still be followed.
+export const metadata: Metadata = { title: "Забравена парола", robots: { index: false, follow: true } };
 
 export default function ForgotPasswordPage() {
   return (

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE } from "@/lib/site";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -7,7 +8,7 @@ import { PricesProvider } from "@/components/prices";
 import { ProductCard } from "@/components/product-card";
 import { getDict, localePath, type Lang } from "@/i18n";
 import { listPublicProducts } from "@/lib/catalog";
-import { alternatesFor, pageUrl } from "@/lib/page-meta";
+import { alternatesFor, pageUrl, siteOgImages } from "@/lib/page-meta";
 import { breadcrumbJsonLd, serializeJsonLd } from "@/lib/seo";
 import { seriesName } from "@/lib/series";
 
@@ -35,6 +36,8 @@ export async function seriesMetadata(
       description,
       url: pageUrl(lang, path),
       locale: t.ogLocale,
+      siteName: SITE.name,
+      images: siteOgImages(lang),
     },
   };
 }
