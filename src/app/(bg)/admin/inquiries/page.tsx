@@ -4,6 +4,7 @@ import { listInquiries } from "@/lib/admin/inquiries";
 import { requireAdmin } from "@/lib/auth/current";
 import { countryName, formatCompanyNumber, ruleFor } from "@/lib/company-number";
 import { can } from "@/lib/permissions";
+import { choiceText } from "@/lib/product-options";
 import { decideInquiryAction } from "../manage-actions";
 
 export const metadata: Metadata = { title: "Запитвания (админ)" };
@@ -64,7 +65,10 @@ async function Content() {
           <ul className="mt-3 flex flex-col gap-1 text-sm">
             {q.items.map((i) => (
               <li key={i.id} className="flex justify-between gap-3 border-b border-line py-1">
-                <span>{i.productName}</span>
+                <span>
+                  {i.productName}
+                  {choiceText(i) && <span className="ml-2 text-secondary">{choiceText(i)}</span>}
+                </span>
                 <span className="whitespace-nowrap">{i.quantity.toLocaleString("bg-BG")} бр.</span>
               </li>
             ))}

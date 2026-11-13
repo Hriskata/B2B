@@ -305,9 +305,16 @@ export const inquiryItems = pgTable(
       .references(() => products.id),
     productName: text("product_name").notNull(),
     quantity: integer().notNull(),
+    // The settings the customer chose (src/lib/product-options.ts), checked
+    // against the catalog on the server. null = the model has no such choice.
+    polish: text(),
+    fibers: integer(),
   },
   (t) => [
-    unique("inquiry_items_inquiry_product_unique").on(t.inquiryId, t.productId),
+    // The same model may be asked for in several settings, each on its own line.
+    unique("inquiry_items_line_unique")
+      .on(t.inquiryId, t.productId, t.polish, t.fibers)
+      .nullsNotDistinct(),
     index("inquiry_items_product_id_idx").on(t.productId),
     check("inquiry_items_quantity_positive", sql`${t.quantity} > 0`),
   ],

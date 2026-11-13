@@ -24,7 +24,7 @@ async function loginAdminAs(email: string, role: "viewer" | "editor") {
 // An inquiry written straight to the database, at a chosen moment.
 async function makeInquiry(
   user: { id: string; companyId: string },
-  items: { productId: string; name: string; quantity: number }[],
+  items: { productId: string; name: string; quantity: number; polish?: string }[],
   options: { createdAt?: Date; companyInactive?: boolean } = {},
 ) {
   const [row] = await getDb()
@@ -41,7 +41,15 @@ async function makeInquiry(
     .returning();
   await getDb()
     .insert(tables.inquiryItems)
-    .values(items.map((i) => ({ inquiryId: row.id, productId: i.productId, productName: i.name, quantity: i.quantity })));
+    .values(
+      items.map((i) => ({
+        inquiryId: row.id,
+        productId: i.productId,
+        productName: i.name,
+        quantity: i.quantity,
+        polish: i.polish ?? null,
+      })),
+    );
   return row;
 }
 
@@ -166,6 +174,16 @@ describeDb("statistics per product", () => {
     expect(by(all.products)).toMatchObject({ "Продукт 1": [2, 7], "Продукт 2": [2, 8] });
     // Most asked first.
     expect(all.products.slice(0, 2).map((p) => p.name)).toEqual(["Продукт 2", "Продукт 1"]);
+  });
+
+  it("a model asked for in two settings in one inquiry counts as one inquiry, with all its units", async () => {
+    const { p1, user } = await setup();
+    await makeInquiry(user, [
+      { productId: p1.id, name: p1.name, quantity: 2, polish: "SM/UPC" },
+      { productId: p1.id, name: p1.name, quantity: 3, polish: "SM/APC" },
+    ]);
+    const all = await inquiryStats({ kind: "all" });
+    expect(by(all.products)).toMatchObject({ "Продукт 1": [1, 5] });
   });
 
   it("an empty period lists every published product with 0; a hidden one only when asked for", async () => {

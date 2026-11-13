@@ -113,10 +113,15 @@ export async function saveProductAction(prev: FormState, formData: FormData): Pr
   if (splice === "invalid") fieldErrors.splice = "Изберете от списъка.";
   if (frontDoor === "invalid") fieldErrors.frontDoor = "Изберете от списъка.";
   if (values.connector.length > 20) fieldErrors.connector = "Твърде дълго (до 20 знака).";
-  const polish = values.polish
-    .split(",")
-    .map((v) => v.trim())
-    .filter(Boolean);
+  // Without repeats: each variant is one choice in the inquiry form.
+  const polish = [
+    ...new Set(
+      values.polish
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean),
+    ),
+  ];
   if (polish.length > 10 || polish.some((v) => v.length > 30)) {
     fieldErrors.polish = "До 10 варианта, разделени със запетая (всеки до 30 знака).";
   }

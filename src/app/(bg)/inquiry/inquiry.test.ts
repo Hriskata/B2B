@@ -39,16 +39,29 @@ const itemRows = () => getDb().select().from(tables.inquiryItems);
 const inquiryMails = () => sentMails.filter((m) => m.subject.startsWith("Ново запитване"));
 
 describe("mergeItems", () => {
-  it("joins the same product into one line with the sum", () => {
+  it("joins the same product in the same settings into one line with the sum; other settings stay apart", () => {
+    const line = (slug: string, quantity: number, polish: string | null = null, fibers: number | null = null) => ({
+      slug,
+      quantity,
+      polish,
+      fibers,
+    });
     expect(
       mergeItems([
-        { slug: "a", quantity: 1 },
-        { slug: "b", quantity: 3 },
-        { slug: "a", quantity: 4 },
+        line("a", 1),
+        line("b", 3),
+        line("a", 4),
+        line("c", 1, "SM/UPC", 12),
+        line("c", 2, "SM/APC", 12),
+        line("c", 5, "SM/UPC", 12),
+        line("c", 1, "SM/UPC", 24),
       ]),
     ).toEqual([
-      { slug: "a", quantity: 5 },
-      { slug: "b", quantity: 3 },
+      line("a", 5),
+      line("b", 3),
+      line("c", 6, "SM/UPC", 12),
+      line("c", 2, "SM/APC", 12),
+      line("c", 1, "SM/UPC", 24),
     ]);
   });
 });
@@ -250,6 +263,89 @@ describeDb("sending an inquiry", () => {
     await getDb().update(tables.users).set({ status: "blocked" }).where(eq(tables.users.id, user.id));
     expect(await send(form())).toBe("/login");
     expect(await inquiryRows()).toHaveLength(0);
+  });
+
+  describe("settings of a model (polish, fibers)", () => {
+    const variants = { polish: ["SM/UPC", "SM/APC", "MM/UPC"], fibers: 12, maxFibersVariant: 48 };
+
+    it("saves the chosen settings; the same model in other settings is its own line", async () => {
+      await createAdmin({ email: "owner@firma.bg", withTotp: false });
+      await createProduct({ slug: "odf-12", name: "ODF 12", ...variants });
+      await createProduct({ slug: "mpo", name: "MPO", polish: ["MPO/MTP SM"], fibers: 576, maxFibersVariant: 576 });
+      await loginCustomer();
+
+      const to = await send(
+        form({}, [
+          { slug: "odf-12", quantity: 2, polish: "SM/APC", fibers: 24 },
+          { slug: "odf-12", quantity: 1, polish: "SM/UPC", fibers: 12 },
+          { slug: "odf-12", quantity: 3, polish: "SM/APC", fibers: 24 },
+          // One polish variant and no fiber range: nothing to choose.
+          { slug: "mpo", quantity: 1 },
+        ]),
+      );
+
+      expect(to).toBe("/inquiry/sent");
+      const lines = (await itemRows())
+        .map((i) => [i.productName, i.polish, i.fibers, i.quantity])
+        .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+      expect(lines).toEqual([
+        ["MPO", "MPO/MTP SM", null, 1],
+        ["ODF 12", "SM/APC", 24, 5],
+        ["ODF 12", "SM/UPC", 12, 1],
+      ]);
+      await vi.waitFor(() => expect(inquiryMails()).toHaveLength(1));
+      expect(inquiryMails()[0].text).toContain("- ODF 12 (SM/APC, 24 влакна): 5 бр.");
+    });
+
+    it("joins lines that end up the same; a joined line still keeps the 100 000 limit", async () => {
+      await createProduct({ slug: "mpo", name: "MPO", polish: ["MPO/MTP SM"], fibers: 576, maxFibersVariant: 576 });
+      await loginCustomer();
+
+      // The only polish, once implied and once named: the same line.
+      expect(
+        await send(
+          form({}, [
+            { slug: "mpo", quantity: 2 },
+            { slug: "mpo", quantity: 3, polish: "MPO/MTP SM" },
+          ]),
+        ),
+      ).toBe("/inquiry/sent");
+      expect((await itemRows()).map((i) => [i.polish, i.quantity])).toEqual([["MPO/MTP SM", 5]]);
+
+      const state = await submitInquiryAction(
+        initialFormState,
+        form({}, [
+          { slug: "mpo", quantity: 100_000 },
+          { slug: "mpo", quantity: 1 },
+        ]),
+      );
+      expect(state.fieldErrors?.items).toMatch(/до 100\s000 бройки общо/);
+      expect(await inquiryRows()).toHaveLength(1);
+    });
+
+    it("refuses a missing or unknown polish and a fiber count outside the catalog range", async () => {
+      await createProduct({ slug: "odf-12", ...variants });
+      await loginCustomer();
+
+      for (const item of [
+        { polish: null, fibers: 12 },
+        { polish: "SM/XYZ", fibers: 12 },
+        { polish: "SM/APC", fibers: 6 },
+        { polish: "SM/APC", fibers: 96 },
+        { polish: "SM/APC" },
+      ]) {
+        const state = await submitInquiryAction(initialFormState, form({}, [{ slug: "odf-12", quantity: 1, ...item }]));
+        expect(state.fieldErrors?.items).toMatch(/полиране и брой влакна/);
+      }
+      // A setting the model does not have at all.
+      await createProduct({ slug: "plain" });
+      const state = await submitInquiryAction(
+        initialFormState,
+        form({}, [{ slug: "plain", quantity: 1, polish: "SM/UPC" }]),
+      );
+      expect(state.fieldErrors?.items).toBeTruthy();
+      expect(await inquiryRows()).toHaveLength(0);
+    });
   });
 
   it("is limited per customer", async () => {

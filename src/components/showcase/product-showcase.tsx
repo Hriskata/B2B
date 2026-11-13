@@ -2,6 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { getDict, localePath, type Lang } from "@/i18n";
 import { listPublicProducts } from "@/lib/catalog";
+import { formatFibers } from "@/lib/product-options";
 import { HotspotViewer, type ShowcaseItem } from "./hotspot-viewer";
 import { MATERIAL_LAYOUT, SHOWCASE_SKU } from "./materials";
 
@@ -52,11 +53,8 @@ export async function ProductShowcase({ lang }: { lang: Lang }) {
 
   const facts = [
     [dict.specs.ports, nf.format(p.ports)],
-    [dict.specs.fibers, nf.format(p.fibers)],
+    [dict.specs.fibers, formatFibers(p, nf) ?? nf.format(p.fibers)],
     p.rackUnits !== null ? [dict.specs.height, `${p.rackUnits}RU`] : null,
-    p.maxFibersVariant !== null
-      ? [dict.specs.fibersUpTo, nf.format(p.maxFibersVariant)]
-      : null,
   ].filter((x): x is string[] => x !== null);
 
   return (

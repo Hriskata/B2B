@@ -113,8 +113,6 @@ export const en: Dict = {
     sku: "Model (SKU)",
     series: "Series",
     mpoPorts: "MPO ports",
-    fibersStandard: "Fibers (standard configuration)",
-    fibersUpTo: "Variants up to (fibers)",
     fibersPerRu: "Fibers per RU",
     splice: "Splice",
     frontDoor: "Front door",

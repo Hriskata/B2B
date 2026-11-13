@@ -9,6 +9,9 @@ export async function createProduct(
     sortOrder: number;
     amountCents: number | null;
     currency: string;
+    polish: string[] | null;
+    fibers: number | null;
+    maxFibersVariant: number | null;
   }> = {},
 ) {
   const [product] = await getDb()
@@ -19,6 +22,9 @@ export async function createProduct(
       description: overrides.description ?? "Описание на продукта.",
       published: overrides.published ?? true,
       sortOrder: overrides.sortOrder ?? 0,
+      polish: overrides.polish ?? null,
+      fibers: overrides.fibers ?? null,
+      maxFibersVariant: overrides.maxFibersVariant ?? null,
     })
     .returning();
   const amountCents = overrides.amountCents === undefined ? 1250 : overrides.amountCents;

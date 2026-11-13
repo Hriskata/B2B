@@ -1,5 +1,6 @@
 import "server-only";
 import { getEnv } from "../env";
+import { choiceText } from "../product-options";
 import type { Mail } from "./send";
 
 // DRAFT texts for the customer and admin emails of phase 1. They are not
@@ -147,9 +148,14 @@ export function registrationRejectedMail(to: string): Mail {
 // contact and message are typed by the customer and are read in the portal.
 export function inquiryAdminMail(
   to: string,
-  items: { name: string; quantity: number }[],
+  items: { name: string; quantity: number; polish: string | null; fibers: number | null }[],
   companyInactive: boolean,
 ): Mail {
+  // Catalog names and settings the server checked against the catalog only.
+  const line = (i: (typeof items)[number]) => {
+    const choice = choiceText(i);
+    return `- ${i.name}${choice ? ` (${choice})` : ""}: ${i.quantity} бр.`;
+  };
   return {
     to,
     subject: companyInactive ? "Ново запитване (неактивна фирма)" : "Ново запитване",
@@ -157,7 +163,7 @@ export function inquiryAdminMail(
       "Здравейте,",
       "",
       "Получено е ново запитване за:",
-      ...items.map((i) => `- ${i.name}: ${i.quantity} бр.`),
+      ...items.map(line),
       "",
       ...(companyInactive
         ? ["Фирмата е неактивна в регистъра. Решете в портала дали да поемете запитването.", ""]

@@ -122,12 +122,15 @@ describe("checkMigrations", () => {
     expect(result.errors).toEqual([]);
     // Before the launch: the known changes that would need a contract note
     // after it (also catches a broken rule): a unique sku in 0003, the eik
-    // changes in 0006.
+    // changes in 0006, the unique line of an inquiry item in 0012 (one model
+    // in several settings).
     expect(result.warnings.map((f) => `${f.migration}:${f.line}`)).toEqual([
       "0003_product_specs:14",
       "0006_company_country_and_review:2",
       "0006_company_country_and_review:3",
       "0006_company_country_and_review:5",
+      "0012_inquiry_item_options:1",
+      "0012_inquiry_item_options:4",
     ]);
   });
 });
