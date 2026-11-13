@@ -57,7 +57,15 @@ export function ProductSpecs({
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {tiles.map(([label, value]) => (
             <li key={label} className="card card-sm p-3 text-center">
-              <div className="t-price">{value}</div>
+              {/* One line always: a range like "144–288" gets a smaller size
+                  so it fits the narrow tile instead of wrapping. */}
+              <div
+                className={`t-price flex h-8 items-center justify-center whitespace-nowrap leading-none ${
+                  (value?.length ?? 0) > 6 ? "text-xl" : (value?.length ?? 0) > 4 ? "text-2xl" : ""
+                }`}
+              >
+                {value}
+              </div>
               <div className="text-xs text-secondary">{label}</div>
             </li>
           ))}
