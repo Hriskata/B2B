@@ -18,6 +18,9 @@ export type AuditAction =
   | "admin.create"
   | "admin.invite_resend"
   | "admin.password_change"
+  | "admin.kind_change"
+  | "inquiry.accept"
+  | "inquiry.decline"
   | "registration.approve"
   | "registration.reject";
 

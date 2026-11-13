@@ -102,7 +102,7 @@ export const en: Dict = {
   product: {
     notFoundTitle: "Product not found",
     back: "← Back to the catalogue",
-    inquiry: "Send an inquiry about this model",
+    inquiry: "Add to inquiry",
     photoPlaceholder: "Photo",
   },
   specs: {

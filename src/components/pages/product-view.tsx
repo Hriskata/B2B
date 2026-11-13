@@ -82,7 +82,7 @@ export async function ProductView({
               <p className="mt-2 text-sm text-secondary">{t.price.note}</p>
             </div>
           </PricesProvider>
-          {/* The form itself is phase 4; until then /inquiry is an empty placeholder (Bulgarian only). */}
+          {/* Adds the model to the inquiry list on /inquiry (Bulgarian only for now). */}
           <Link
             href={`/inquiry?product=${encodeURIComponent(product.slug)}`}
             className="btn btn-primary w-fit"

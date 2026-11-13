@@ -4,7 +4,8 @@ import { refresh } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { createAdminAccount, resendAdminInvite, resetAdminTwoFactor } from "@/lib/admin/admins";
+import { createAdminAccount, resendAdminInvite, resetAdminTwoFactor, setAdminKind } from "@/lib/admin/admins";
+import { decideInquiry } from "@/lib/admin/inquiries";
 import { setCompanyBlocked, setUserBlocked } from "@/lib/admin/accounts";
 import { REVIEW_NOTICE_COOKIE, reviewRegistration } from "@/lib/admin/registrations";
 import { createProduct, updateProduct } from "@/lib/admin/products";
@@ -221,12 +222,14 @@ export async function createAdminAction(prev: FormState, formData: FormData): Pr
 
   const rawEmail = field(formData, "email");
   const role = field(formData, "role");
-  const values = { email: rawEmail, role };
+  const kind = field(formData, "kind");
+  const values = { email: rawEmail, role, kind };
   const email = emailSchema.safeParse(rawEmail);
   const fieldErrors: Record<string, string> = {};
   if (!email.success) fieldErrors.email = "Въведете валиден имейл адрес.";
   if (role !== "viewer" && role !== "editor") fieldErrors.role = "Изберете роля от списъка.";
-  if (!email.success || (role !== "viewer" && role !== "editor")) {
+  if (kind !== "support" && kind !== "owner") fieldErrors.kind = "Изберете тип от списъка.";
+  if (!email.success || (role !== "viewer" && role !== "editor") || (kind !== "support" && kind !== "owner")) {
     return failure(prev, MESSAGES.invalidInput, { fieldErrors, values });
   }
 
@@ -234,6 +237,7 @@ export async function createAdminAction(prev: FormState, formData: FormData): Pr
     { id: auth.admin.id, email: auth.admin.email },
     email.data,
     role,
+    kind,
     field(formData, "password"),
     field(formData, "code"),
   );
@@ -262,6 +266,27 @@ export async function resendAdminInviteAction(formData: FormData): Promise<void>
   const auth = await authorize("manage_admins");
   if (!auth.ok) return;
   await resendAdminInvite({ id: auth.admin.id, email: auth.admin.email }, field(formData, "adminId"));
+  refresh();
+}
+
+// Support or owner: only who gets the inquiry emails changes.
+export async function setAdminKindAction(formData: FormData): Promise<void> {
+  const auth = await authorize("manage_admins");
+  if (!auth.ok) return;
+  const kind = field(formData, "kind");
+  if (kind !== "support" && kind !== "owner") return;
+  await setAdminKind({ id: auth.admin.id, email: auth.admin.email }, field(formData, "adminId"), kind);
+  refresh();
+}
+
+// Take or decline an inquiry of an inactive company. The first decision
+// stands; the customer is not told.
+export async function decideInquiryAction(formData: FormData): Promise<void> {
+  const auth = await authorize("decide_inquiries");
+  if (!auth.ok) return;
+  const decision = field(formData, "decision");
+  if (decision !== "accepted" && decision !== "declined") return;
+  await decideInquiry({ id: auth.admin.id, email: auth.admin.email }, field(formData, "inquiryId"), decision);
   refresh();
 }
 

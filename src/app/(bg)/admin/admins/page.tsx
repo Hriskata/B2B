@@ -4,7 +4,7 @@ import { listAdmins } from "@/lib/admin/admins";
 import { requireAdmin } from "@/lib/auth/current";
 import { can } from "@/lib/permissions";
 import { AddAdminForm } from "./add-admin-form";
-import { resendAdminInviteAction } from "../manage-actions";
+import { resendAdminInviteAction, setAdminKindAction } from "../manage-actions";
 import { ResetTwoFactorForm } from "./reset-form";
 
 export const metadata: Metadata = { title: "Админи" };
@@ -12,6 +12,11 @@ export const metadata: Metadata = { title: "Админи" };
 const ROLE_LABEL = {
   viewer: "Само преглед",
   editor: "Преглед и редакция",
+} as const;
+
+const KIND_LABEL = {
+  support: "Поддръжка на сайта",
+  owner: "Собственик",
 } as const;
 
 export default function AdminAdminsPage() {
@@ -60,7 +65,7 @@ async function Content() {
                 )}
               </p>
               <p className="text-sm text-secondary">
-                {ROLE_LABEL[a.role]} ·{" "}
+                {KIND_LABEL[a.kind]} · {ROLE_LABEL[a.role]} ·{" "}
                 {a.status === "active" ? "Активен" : "Блокиран"} · 2FA:{" "}
                 {a.totpEnabledAt ? "включена" : "не е настроена"}
                 {a.passwordMustChange && " · още не е задал собствена парола"}
@@ -70,6 +75,17 @@ async function Content() {
                   <input type="hidden" name="adminId" value={a.id} />
                   <button type="submit" className="underline">
                     Изпрати поканата отново
+                  </button>
+                </form>
+              )}
+              {canManage && (
+                <form action={setAdminKindAction} className="mt-2 text-sm">
+                  <input type="hidden" name="adminId" value={a.id} />
+                  <input type="hidden" name="kind" value={a.kind === "owner" ? "support" : "owner"} />
+                  <button type="submit" className="underline">
+                    {a.kind === "owner"
+                      ? "Направи „Поддръжка на сайта“ (без имейли за запитвания)"
+                      : "Направи „Собственик“ (получава имейли за запитвания)"}
                   </button>
                 </form>
               )}

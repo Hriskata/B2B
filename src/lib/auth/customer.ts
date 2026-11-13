@@ -3,7 +3,8 @@ import { and, eq } from "drizzle-orm";
 import { after } from "next/server";
 import { getDb, tables } from "@/db";
 import { notifyAdminsOfPendingRegistration } from "../admin/registrations";
-import { checkCompany, type CompanyCheck } from "../company-check";
+import { checkCompany } from "../company-check";
+import { isRealAnswer, registryFields } from "../company-check/registry-fields";
 import { sendMail } from "../mail/send";
 import { alreadyRegisteredMail, resetPasswordMail, verifyEmailMail } from "../mail/templates";
 import { hashPassword, verifyAgainstDummy, verifyPassword } from "../password";
@@ -47,23 +48,6 @@ export function statusAfterEmailConfirmed(review: {
   if (review.rejectedAt) return "rejected";
   if (review.approvedAt || !review.needsReview) return "active";
   return "pending_review";
-}
-
-// What is stored on the company from a register answer.
-function registryFields(check: CompanyCheck) {
-  const found = check.kind === "active" || check.kind === "inactive" || check.kind === "unknown";
-  return {
-    registryState: check.kind,
-    registryStatus: found ? check.status : null,
-    registryName: found ? check.name : null,
-    registryCheckedAt: new Date(),
-  };
-}
-
-// A register that did not answer (or an unconfirmed "not found") must not
-// wipe an earlier real answer that admins may still be looking at.
-function isRealAnswer(check: CompanyCheck): boolean {
-  return check.kind !== "unavailable" && check.kind !== "not_confirmed";
 }
 
 // Order as in CLAUDE.md: the form, then the company check, and only then the

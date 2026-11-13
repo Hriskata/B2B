@@ -18,6 +18,9 @@ const LABEL: Record<AuditAction, string> = {
   "admin.create": "Добавен администратор",
   "admin.invite_resend": "Нова покана за администратор",
   "admin.password_change": "Смяна на парола на админ",
+  "admin.kind_change": "Смяна на типа на админ (поддръжка / собственик)",
+  "inquiry.accept": "Поето запитване (неактивна фирма)",
+  "inquiry.decline": "Отказано запитване (неактивна фирма)",
   "registration.approve": "Одобрена регистрация",
   "registration.reject": "Отхвърлена регистрация",
 };

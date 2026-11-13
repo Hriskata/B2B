@@ -15,6 +15,7 @@ export async function getCurrentUser() {
     .select({
       id: tables.users.id,
       email: tables.users.email,
+      fullName: tables.users.fullName,
       status: tables.users.status,
       companyId: tables.users.companyId,
       companyName: tables.companies.name,

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, TransactionRollbackError } from "drizzle-orm";
+import { and, asc, eq, ne, TransactionRollbackError } from "drizzle-orm";
 import { getDb, tables } from "@/db";
 import { writeAudit, type Actor } from "../audit";
 import { revokeAllSessions, revokeOtherSessions } from "../auth/session";
@@ -29,6 +29,7 @@ export async function listAdmins() {
       id: tables.admins.id,
       email: tables.admins.email,
       role: tables.admins.role,
+      kind: tables.admins.kind,
       status: tables.admins.status,
       passwordMustChange: tables.admins.passwordMustChange,
       isTest: tables.admins.isTest,
@@ -37,6 +38,34 @@ export async function listAdmins() {
     })
     .from(tables.admins)
     .orderBy(asc(tables.admins.email));
+}
+
+export type AdminKind = "support" | "owner";
+
+// Support or owner (decided 13.11.2026). It changes only who gets the
+// inquiry emails, not any right. Journaled.
+export async function setAdminKind(
+  actor: Actor,
+  adminId: string,
+  kind: AdminKind,
+): Promise<"ok" | "not_found"> {
+  if (!/^[0-9a-f-]{36}$/i.test(adminId)) return "not_found";
+  return getDb().transaction(async (tx) => {
+    const [row] = await tx
+      .update(tables.admins)
+      .set({ kind })
+      // No change, no journal entry (e.g. a double click on the toggle).
+      .where(and(eq(tables.admins.id, adminId), ne(tables.admins.kind, kind)))
+      .returning({ email: tables.admins.email });
+    if (!row) return "not_found";
+    await writeAudit(tx, actor, {
+      action: "admin.kind_change",
+      targetType: "admin",
+      targetId: adminId,
+      details: { targetEmail: row.email, kind },
+    });
+    return "ok";
+  });
 }
 
 export type ResetResult = "ok" | "invalid_credentials" | "rate_limited" | "not_found" | "self";
@@ -122,6 +151,7 @@ export async function createAdminAccount(
   actor: Actor,
   email: string,
   role: "viewer" | "editor",
+  kind: AdminKind,
   // The creating admin's own password and 2FA code: an open session alone
   // (e.g. an unattended laptop) must not be enough to add a lasting account.
   password: string,
@@ -139,7 +169,7 @@ export async function createAdminAccount(
   const created = await getDb().transaction(async (tx) => {
     const [row] = await tx
       .insert(tables.admins)
-      .values({ email, passwordHash, role, passwordMustChange: true })
+      .values({ email, passwordHash, role, kind, passwordMustChange: true })
       .onConflictDoNothing({ target: tables.admins.email })
       .returning({ id: tables.admins.id });
     if (!row) return null;
@@ -147,7 +177,7 @@ export async function createAdminAccount(
       action: "admin.create",
       targetType: "admin",
       targetId: row.id,
-      details: { targetEmail: email, role },
+      details: { targetEmail: email, role, kind },
     });
     const token = await createEmailToken("admin_invite", "admin", row.id, tx);
     return { id: row.id, token };
