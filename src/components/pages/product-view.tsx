@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE } from "@/lib/site";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -36,6 +37,8 @@ export async function productMetadata(
       description,
       url: pageUrl(lang, path),
       locale: getDict(lang).ogLocale,
+      siteName: SITE.name,
+      // The picture comes from opengraph-image.tsx next to the page.
     },
   };
 }

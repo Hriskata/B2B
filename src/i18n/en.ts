@@ -6,6 +6,12 @@ export const en: Dict = {
   htmlLang: "en",
   localeTag: "en-GB",
   ogLocale: "en_GB",
+  // Shared-link picture (Open Graph). DRAFT text.
+  og: {
+    productAlt: "ODFFiber optical panel: model and key specifications",
+    siteAlt: "ODFFiber: high-density optical distribution frames (ODF)",
+    forBusinesses: "For businesses · Quotes on request",
+  },
   switchTo: { label: "Български", short: "BG", ariaLabel: "Превключване към български" },
   header: {
     products: "Products",
