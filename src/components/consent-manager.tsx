@@ -73,18 +73,22 @@ function unloadAnalytics(id: string | null) {
 // and stops when the choice changes to "refuse".
 export function ConsentManager({
   measurementId,
+  initialChoice,
   lang,
 }: {
   measurementId: string | null;
+  // The choice read from the cookie on the server, so the banner (or its
+  // absence) is already in the first HTML.
+  initialChoice: ConsentChoice | null;
   lang: Lang;
 }) {
   const t = getDict(lang).consent;
-  const [choice, setChoice] = useState<ConsentChoice | null>(null);
+  const [choice, setChoice] = useState<ConsentChoice | null>(initialChoice);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    // Read the cookie after mount, so server and client HTML match.
+    // Read the cookie again after mount (it may have changed in another tab).
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setChoice(readConsentFromCookieString(document.cookie));
     setReady(true);
@@ -106,7 +110,7 @@ export function ConsentManager({
     setOpen(false);
   }, []);
 
-  if (!ready || (choice !== null && !open)) return null;
+  if (choice !== null && !open) return null;
 
   return (
     <div

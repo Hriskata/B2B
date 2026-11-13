@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { LoginForm } from "./login-form";
 
-export const metadata: Metadata = { title: "Вход" };
+// Not useful as a search result; links on it may still be followed.
+export const metadata: Metadata = { title: "Вход", robots: { index: false, follow: true } };
 
 const NOTICES: Record<string, string> = {
   "password-reset": "Паролата е сменена. Влезте с новата парола.",

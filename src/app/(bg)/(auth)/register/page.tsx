@@ -5,7 +5,8 @@ import { getCaptchaSiteKey } from "@/lib/captcha";
 import { countryOptions } from "@/lib/company-number";
 import { RegisterForm } from "./register-form";
 
-export const metadata: Metadata = { title: "Регистрация" };
+// Not useful as a search result; links on it may still be followed.
+export const metadata: Metadata = { title: "Регистрация", robots: { index: false, follow: true } };
 
 export default function RegisterPage() {
   return (
