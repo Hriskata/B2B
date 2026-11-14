@@ -89,7 +89,7 @@ describe("product text", () => {
 
   it("English prefers the owner's text, then the generated one, then Bulgarian", () => {
     expect(productDescription({ ...base, descriptionEn: "Owner text." }, "en")).toBe("Owner text.");
-    expect(productDescription(base, "en")).toBe("Optical distribution frame (ODF), 1U: 12 LC ports / 24 fibers.");
+    expect(productDescription(base, "en")).toBe("Optical distribution frame (ODF), 1RU: 12 LC ports / 24 fibers.");
     expect(productDescription({ ...base, ports: null }, "en")).toBe("Български текст.");
   });
 
@@ -107,14 +107,14 @@ describe("productTitle", () => {
   } satisfies PublicProduct;
 
   it("follows the plan template in both languages", () => {
-    expect(productTitle(p, "bg")).toBe("HDS-ODF-001-SC12 – 12 SC порта, 12 влакна, 1U | ODFFiber");
-    expect(productTitle(p, "en")).toBe("HDS-ODF-001-SC12 – 12 SC ports, 12 fibers, 1U | ODFFiber");
+    expect(productTitle(p, "bg")).toBe("HDS-ODF-001-SC12 – 12 SC порта, 12 влакна, 1RU | ODFFiber");
+    expect(productTitle(p, "en")).toBe("HDS-ODF-001-SC12 – 12 SC ports, 12 fibers, 1RU | ODFFiber");
   });
 
   it("shows the fiber range when the model has larger variants", () => {
     const ranged = { ...p, fibers: 24, maxFibersVariant: 96 };
-    expect(productTitle(ranged, "bg")).toBe("HDS-ODF-001-SC12 – 12 SC порта, 24–96 влакна, 1U | ODFFiber");
-    expect(productTitle(ranged, "en")).toBe("HDS-ODF-001-SC12 – 12 SC ports, 24–96 fibers, 1U | ODFFiber");
+    expect(productTitle(ranged, "bg")).toBe("HDS-ODF-001-SC12 – 12 SC порта, 24–96 влакна, 1RU | ODFFiber");
+    expect(productTitle(ranged, "en")).toBe("HDS-ODF-001-SC12 – 12 SC ports, 24–96 fibers, 1RU | ODFFiber");
     // Large numbers stay plain digits.
     expect(productTitle({ ...p, fibers: 1152, maxFibersVariant: 1152 }, "bg")).toContain("1152 влакна");
   });

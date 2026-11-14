@@ -16,7 +16,7 @@ export function describeProductEn(p: {
 }): string | null {
   if (p.connector === null || p.ports === null || p.fibers === null || p.rackUnits === null) return null;
   const mpo = p.mpoPorts ? `, ${p.mpoPorts} MPO ports` : "";
-  return `Optical distribution frame (ODF), ${p.rackUnits}U: ${p.ports} ${p.connector} ports${mpo} / ${p.fibers} fibers.`;
+  return `Optical distribution frame (ODF), ${p.rackUnits}RU: ${p.ports} ${p.connector} ports${mpo} / ${p.fibers} fibers.`;
 }
 
 // Bulgarian: the stored description. English: the owner's English text if
@@ -27,7 +27,7 @@ export function productDescription(p: PublicProduct, lang: Lang): string {
 }
 
 // Page title of a product: "{SKU} – {ports} {connector} ports, {fibers} fibers,
-// {RU}U | ODFFiber". Fibers are the range up to the largest variant when the
+// {RU}RU | ODFFiber" (RU everywhere, as in the owner's PDF catalog; decided 14.11.2026). Fibers are the range up to the largest variant when the
 // catalog has one ("24–96", decided 14.11.2026), as on the product page.
 // Falls back to the model name when the numbers are missing.
 export function productTitle(p: PublicProduct, lang: Lang): string {
@@ -38,8 +38,8 @@ export function productTitle(p: PublicProduct, lang: Lang): string {
   const fibers = formatFibers(p, TITLE_NUMBERS) ?? String(p.fibers);
   const nums =
     lang === "bg"
-      ? `${p.ports} ${p.connector} порта, ${fibers} влакна, ${p.rackUnits}U`
-      : `${p.ports} ${p.connector} ports, ${fibers} fibers, ${p.rackUnits}U`;
+      ? `${p.ports} ${p.connector} порта, ${fibers} влакна, ${p.rackUnits}RU`
+      : `${p.ports} ${p.connector} ports, ${fibers} fibers, ${p.rackUnits}RU`;
   return `${p.sku} – ${nums} | ODFFiber`;
 }
 
