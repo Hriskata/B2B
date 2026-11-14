@@ -17,6 +17,23 @@ describe("productJsonLd", () => {
     });
     expect(JSON.stringify(data)).not.toMatch(/offers|price|EUR|Offer/i);
   });
+
+  it("adds the code, an absolute picture address and the brand when known", () => {
+    const data = productJsonLd(
+      { ...product, sku: "HDS-ODF-002-SC24", image: "/images/products/hds-odf-002-sc24.webp", brand: "ODFFiber" },
+      "https://shop.example.bg",
+      "en",
+    );
+    expect(data).toMatchObject({
+      url: "https://shop.example.bg/en/products/produkt-1",
+      sku: "HDS-ODF-002-SC24",
+      image: "https://shop.example.bg/images/products/hds-odf-002-sc24.webp",
+      brand: { "@type": "Brand", name: "ODFFiber" },
+    });
+    expect(JSON.stringify(data)).not.toMatch(/offers|price|EUR|Offer/i);
+    // A model without a picture has no image field (not an empty one).
+    expect(productJsonLd({ ...product, image: null }, "https://shop.example.bg")).not.toHaveProperty("image");
+  });
 });
 
 describe("serializeJsonLd", () => {

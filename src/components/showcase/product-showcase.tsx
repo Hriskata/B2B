@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { getDict, localePath, type Lang } from "@/i18n";
 import { listPublicProducts } from "@/lib/catalog";
 import { formatFibers } from "@/lib/product-options";
+import { productImageAlt } from "@/lib/product-text";
 import { HotspotViewer, type ShowcaseItem } from "./hotspot-viewer";
 import { MATERIAL_LAYOUT, SHOWCASE_SKU } from "./materials";
 
@@ -79,7 +80,7 @@ export async function ProductShowcase({ lang }: { lang: Lang }) {
         <HotspotViewer
           items={items}
           src={`/images/products/${SHOWCASE_SKU.toLowerCase()}-cutout.webp`}
-          alt={p.name}
+          alt={productImageAlt(p, lang)}
           labels={{
             list: t.listLabel,
             inside: t.insideTitle,

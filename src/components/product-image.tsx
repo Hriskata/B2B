@@ -1,11 +1,5 @@
 import Image from "next/image";
-import { productImageName } from "@/lib/product-image-file";
-
-// A model without a render keeps the grey placeholder, so the layout is the same.
-function imageSrc(sku: string | null): string | null {
-  const name = productImageName(sku);
-  return name ? `/images/products/${name}` : null;
-}
+import { productImageSrc } from "@/lib/product-image-file";
 
 // Card width by default; the product page passes its own, wider value so the
 // browser does not fetch a picture smaller than the slot.
@@ -27,8 +21,9 @@ export function ProductImage({
   // Text of the grey tile when there is no picture, in the page language.
   placeholder: string;
 }) {
-  const src = imageSrc(sku);
+  const src = productImageSrc(sku);
   const frame = `relative aspect-[4/3] w-full overflow-hidden ${className}`;
+  // A model without a render keeps the grey placeholder, so the layout is the same.
   if (!src) {
     return (
       <div
