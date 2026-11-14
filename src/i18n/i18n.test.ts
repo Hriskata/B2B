@@ -135,8 +135,16 @@ describe("productImageAlt", () => {
   it("says what the picture shows, in each language", () => {
     expect(productImageAlt(p, "bg")).toBe("High-Density Splice SC24 (HDS-ODF-002-SC24) – оптичен панел (ODF), 1RU, 24 SC порта");
     expect(productImageAlt(p, "en")).toBe(
-      "High-Density Splice SC24 (HDS-ODF-002-SC24) – optical distribution frame (ODF), 1U, 24 SC ports",
+      "High-Density Splice SC24 (HDS-ODF-002-SC24) – optical distribution frame (ODF), 1RU, 24 SC ports",
     );
+  });
+
+  it("names the LC and the MPO ports of an LC/MPO panel; an MPO panel has one kind", () => {
+    const lcMpo = { ...p, name: "HD LC12 MPO", sku: "HD-ODF-001-LC12-MPO", connector: "LC/MPO", ports: 12, mpoPorts: 2 };
+    expect(productImageAlt(lcMpo, "bg")).toBe("HD LC12 MPO (HD-ODF-001-LC12-MPO) – оптичен панел (ODF), 1RU, 12 LC порта, 2 MPO порта");
+    expect(productImageAlt(lcMpo, "en")).toMatch(/12 LC ports, 2 MPO ports$/);
+    const mpo = { ...p, name: "HD MPO12", sku: "HD-ODF-006-MPO12", connector: "MPO", ports: 12, mpoPorts: 12 };
+    expect(productImageAlt(mpo, "bg")).toMatch(/, 12 MPO порта$/);
   });
 
   it("keeps to the known data", () => {

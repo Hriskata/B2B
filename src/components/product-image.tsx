@@ -1,8 +1,6 @@
 import Image from "next/image";
 import { productImageSrc } from "@/lib/product-image-file";
 
-// A model without a render keeps the grey placeholder, so the layout is the same.
-
 // Card width by default; the product page passes its own, wider value so the
 // browser does not fetch a picture smaller than the slot.
 const CARD_SIZES = "(min-width: 1024px) 320px, (min-width: 640px) 45vw, 100vw";
@@ -25,6 +23,7 @@ export function ProductImage({
 }) {
   const src = productImageSrc(sku);
   const frame = `relative aspect-[4/3] w-full overflow-hidden ${className}`;
+  // A model without a render keeps the grey placeholder, so the layout is the same.
   if (!src) {
     return (
       <div

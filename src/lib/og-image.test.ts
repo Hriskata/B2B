@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { PublicProduct } from "./catalog";
 import { productOgImage, siteOgImage } from "./og-image";
-import { productImageName } from "./product-image-file";
+import { productImageName, productImageSrc } from "./product-image-file";
 
 const product: PublicProduct = {
   slug: "hds-odf-002-sc24",
@@ -36,7 +36,12 @@ describe("product render file", () => {
   it("never turns a SKU into a path, and has nothing for an unknown model", () => {
     for (const sku of ["../../etc/passwd", "a/b", "HDS ODF", "", null, "no-such-model"]) {
       expect(productImageName(sku)).toBeNull();
+      expect(productImageSrc(sku)).toBeNull();
     }
+  });
+
+  it("gives the public address of a render", () => {
+    expect(productImageSrc("HDS-ODF-002-SC24")).toBe("/images/products/hds-odf-002-sc24.webp");
   });
 });
 
