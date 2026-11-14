@@ -42,3 +42,16 @@ export function productTitle(p: PublicProduct, lang: Lang): string {
       : `${p.ports} ${p.connector} ports, ${fibers} fibers, ${p.rackUnits}U`;
   return `${p.sku} – ${nums} | ODFFiber`;
 }
+
+// Text alternative of the product render on the product page and in the home
+// showcase (DRAFT wording): what the picture shows, from catalog data only,
+// e.g. "High-Density Splice SC24 (HDS-ODF-002-SC24) – оптичен панел (ODF),
+// 1RU, 24 SC порта". Catalog cards keep the bare name: it stands right next
+// to the picture there, and a screen reader would read it twice.
+export function productImageAlt(p: PublicProduct, lang: Lang): string {
+  const name = p.sku ? `${p.name} (${p.sku})` : p.name;
+  if (p.ports === null || p.rackUnits === null || !p.connector) return name;
+  return lang === "bg"
+    ? `${name} – оптичен панел (ODF), ${p.rackUnits}RU, ${p.ports} ${p.connector} порта`
+    : `${name} – optical distribution frame (ODF), ${p.rackUnits}U, ${p.ports} ${p.connector} ports`;
+}

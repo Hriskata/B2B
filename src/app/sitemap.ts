@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { connection } from "next/server";
 import { localePath, LANGS } from "@/i18n";
 import { listPublicProducts } from "@/lib/catalog";
+import { productImageSrc } from "@/lib/product-image-file";
 import { getEnv } from "@/lib/env";
 import { SERIES_KEYS } from "@/lib/series";
 
@@ -14,17 +15,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   await connection();
   const root = getEnv().APP_URL.replace(/\/$/, "");
   const products = await listPublicProducts();
-  const paths = [
-    ...STATIC_PATHS,
-    ...SERIES_KEYS.map((key) => `/series/${key}`),
-    ...products.map((p) => `/products/${p.slug}`),
+  // Each product page lists its render (image sitemap), so search engines
+  // find the pictures and know which page they belong to.
+  const pages: { path: string; image?: string | null }[] = [
+    ...STATIC_PATHS.map((path) => ({ path })),
+    ...SERIES_KEYS.map((key) => ({ path: `/series/${key}` })),
+    ...products.map((p) => ({ path: `/products/${p.slug}`, image: productImageSrc(p.sku) })),
   ];
-  return paths.flatMap((path) =>
+  return pages.flatMap(({ path, image }) =>
     LANGS.map((lang) => ({
       url: `${root}${localePath(lang, path)}`,
       alternates: {
         languages: { bg: `${root}${localePath("bg", path)}`, en: `${root}${localePath("en", path)}` },
       },
+      ...(image ? { images: [`${root}${image}`] } : {}),
     })),
   );
 }

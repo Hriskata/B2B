@@ -4,7 +4,17 @@ import type { PublicProduct } from "./catalog";
 // Structured data for search engines. It is built from PublicProduct, which
 // has no price field, and it deliberately has no `offers` (checklist A: a
 // guest must not get a price in JSON-LD).
-export function productJsonLd(product: Pick<PublicProduct, "slug" | "name" | "description">, baseUrl: string, lang: Lang = "bg") {
+// `image` is the site path of the render ("/images/products/..."), made
+// absolute here; Google shows products with a picture in its results.
+export function productJsonLd(
+  product: Pick<PublicProduct, "slug" | "name" | "description"> & {
+    sku?: string | null;
+    image?: string | null;
+    brand?: string;
+  },
+  baseUrl: string,
+  lang: Lang = "bg",
+) {
   const root = baseUrl.replace(/\/$/, "");
   return {
     "@context": "https://schema.org",
@@ -12,6 +22,9 @@ export function productJsonLd(product: Pick<PublicProduct, "slug" | "name" | "de
     name: product.name,
     description: product.description,
     url: `${root}${localePath(lang, `/products/${product.slug}`)}`,
+    ...(product.sku ? { sku: product.sku } : {}),
+    ...(product.image ? { image: `${root}${product.image}` } : {}),
+    ...(product.brand ? { brand: { "@type": "Brand", name: product.brand } } : {}),
   };
 }
 

@@ -19,3 +19,9 @@ export function productImageName(sku: string | null): string | null {
 export function productImagePath(name: string): string {
   return path.join(IMAGE_DIR, name);
 }
+
+// Public address of a model's render ("/images/products/<name>.webp"), or null.
+export function productImageSrc(sku: string | null): string | null {
+  const name = productImageName(sku);
+  return name ? `/images/products/${name}` : null;
+}

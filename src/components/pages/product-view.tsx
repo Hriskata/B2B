@@ -10,7 +10,8 @@ import { getDict, localePath, type Lang } from "@/i18n";
 import { getPublicProduct } from "@/lib/catalog";
 import { getEnv } from "@/lib/env";
 import { alternatesFor, pageUrl } from "@/lib/page-meta";
-import { productDescription, productTitle } from "@/lib/product-text";
+import { productImageSrc } from "@/lib/product-image-file";
+import { productDescription, productImageAlt, productTitle } from "@/lib/product-text";
 import { breadcrumbJsonLd, productJsonLd, serializeJsonLd } from "@/lib/seo";
 
 type Params = Promise<{ slug: string }>;
@@ -64,7 +65,7 @@ export async function ProductView({
         {/* Half of the 1120 px page from 768 px up (two columns), else full width. */}
         <ProductImage
           sku={product.sku}
-          alt={product.name}
+          alt={productImageAlt(product, lang)}
           priority
           sizes="(min-width: 1120px) 540px, (min-width: 768px) 50vw, 100vw"
           placeholder={t.product.photoPlaceholder}
@@ -117,6 +118,9 @@ export async function ProductView({
                   slug: product.slug,
                   name: product.name,
                   description: productDescription(product, lang),
+                  sku: product.sku,
+                  image: productImageSrc(product.sku),
+                  brand: SITE.name,
                 },
                 getEnv().APP_URL,
                 lang,

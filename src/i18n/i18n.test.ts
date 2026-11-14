@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeProductEn, productDescription, productTitle } from "@/lib/product-text";
+import { describeProductEn, productDescription, productImageAlt, productTitle } from "@/lib/product-text";
 import type { PublicProduct } from "@/lib/catalog";
 import { getDict, localePath, SHARED_PATHS, switchHref } from "./index";
 
@@ -122,6 +122,26 @@ describe("productTitle", () => {
   it("falls back to the model name when numbers are missing", () => {
     expect(productTitle({ ...p, fibers: null }, "bg")).toBe("High-Density Splice SC12");
     expect(productTitle({ ...p, sku: null }, "en")).toBe("High-Density Splice SC12");
+  });
+});
+
+describe("productImageAlt", () => {
+  const p = {
+    slug: "x", name: "High-Density Splice SC24", description: "", descriptionEn: null, sku: "HDS-ODF-002-SC24",
+    series: "hds", connector: "SC", ports: 24, mpoPorts: null, fibers: 24, maxFibersVariant: 96,
+    rackUnits: 1, fibersPerRu: 24, polish: [], splice: true, frontDoor: null,
+  } satisfies PublicProduct;
+
+  it("says what the picture shows, in each language", () => {
+    expect(productImageAlt(p, "bg")).toBe("High-Density Splice SC24 (HDS-ODF-002-SC24) – оптичен панел (ODF), 1RU, 24 SC порта");
+    expect(productImageAlt(p, "en")).toBe(
+      "High-Density Splice SC24 (HDS-ODF-002-SC24) – optical distribution frame (ODF), 1U, 24 SC ports",
+    );
+  });
+
+  it("keeps to the known data", () => {
+    expect(productImageAlt({ ...p, ports: null }, "bg")).toBe("High-Density Splice SC24 (HDS-ODF-002-SC24)");
+    expect(productImageAlt({ ...p, sku: null, connector: null }, "en")).toBe("High-Density Splice SC24");
   });
 });
 
